@@ -1,0 +1,7 @@
+{
+    "length": ["chiều dài", "dài", "cd", "length"],
+    "width": ["chiều rộng", "rộng", "cr", "width"],
+    "bedrooms": ["phòng ngủ", "pn", "bedrooms", "số phòng ngủ"],
+    "sepal length":["chiều dài cánh hoa"],
+    "sepal width":["chiều rộng cánh hoa"]
+}

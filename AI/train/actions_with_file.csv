@@ -1,0 +1,47 @@
+﻿text,label
+Dự đoán giá nhà cho tôi,predict
+Bạn có thể dự đoán kết quả được không?,predict
+Cho tôi một dự đoán về doanh số tháng sau,predict
+Hãy dự đoán nhãn cho các câu này,predict
+Predict the label for this sentence,predict
+Tôi muốn model dự đoán giá trị,predict
+Cho tôi output dự đoán trên tập test,predict
+Chạy mô hình và trả về dự đoán,predict
+Dự đoán nhãn cho câu: 'Tôi cần mở file',predict
+Cho biết kết quả dự đoán cho 5 dòng đầu,predict
+
+Vẽ suy nghĩ của bạn về cách giải quyết bài toán này,mind_drawing
+Hiển thị quy trình tư duy khi phân loại,mind_drawing
+Trình bày các bước bạn suy nghĩ để đưa ra dự đoán,mind_drawing
+Hãy cho tôi sơ đồ tư duy (thinking) cho bài toán này,mind_drawing
+Giải thích tuần tự các bước phân tích dữ liệu,mind_drawing
+Mô tả pipeline tư duy khi xử lý văn bản,mind_drawing
+Hiển thị các giả thiết và lý do chọn mô hình,mind_drawing
+Vẽ luồng logic bạn sử dụng để xử lý câu hỏi,mind_drawing
+Cho tôi các bước suy luận để giải phương trình này,mind_drawing
+Phân tích và vẽ sơ đồ tư duy cho task này,mind_drawing
+
+Vẽ sơ đồ liên hệ giữa BuildingArea và Price,draw_diagram
+Cho tôi biểu đồ phân phối của Price,draw_diagram
+Vẽ scatter plot giữa Rooms và Price,draw_diagram
+Tạo biểu đồ cột cho số lượng theo năm,draw_diagram
+Vẽ heatmap ma trận tương quan,draw_diagram
+Hiển thị histogram cho biến Age,draw_diagram
+Làm một sơ đồ pipeline dữ liệu (flowchart),draw_diagram
+Tạo visual cho kết quả dự đoán vs thực tế,draw_diagram
+Vẽ đồ thị lỗi huấn luyện theo epoch,draw_diagram
+Vẽ biểu đồ hộp (boxplot) cho Price,draw_diagram
+
+Thêm cột 'Age' vào dataset,add_data
+Mở file và thêm dữ liệu mới vào,add_data
+Merge thêm dữ liệu từ file khác,add_data
+Duplicate một hàng để tăng mẫu,add_data
+
+Xóa các hàng có giá > 3_000_000,del_data
+Xóa cột không cần thiết khỏi dataframe,del_data
+
+Chỉnh sửa giá trị của hàng thứ 10,edit_data
+Lưu các thay đổi vào dataset,edit_data
+Thay thế giá trị null bằng trung bình cột,edit_data
+Rename cột 'YearBuilt' thành 'Year',edit_data
+
