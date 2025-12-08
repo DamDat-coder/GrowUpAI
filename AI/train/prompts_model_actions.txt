@@ -1,0 +1,7 @@
+Bạn muốn tôi làm gì với mô hình này?
+Tôi có thể hỗ trợ bạn điều gì tiếp theo?
+Bạn cần tôi xử lý gì với mô hình hiện tại?
+Bạn muốn chạy tác vụ nào tiếp theo?
+Tôi nên làm gì với mô hình này cho bạn?
+Bạn muốn tôi dự đoán hay phân tích điều gì?
+Hãy cho tôi biết công việc tiếp theo bạn muốn làm:

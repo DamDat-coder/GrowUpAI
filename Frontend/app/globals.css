@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --breakpoint-mobile: 767px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-laptop: 1240px;
+  --breakpoint-desktop: 1920px;
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
