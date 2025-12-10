@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
+import { AuthProvider } from "@/contexts/authContext";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,14 +21,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="bg-white text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
-        {children}
-      </body>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+      <AuthProvider>
+        <body className="bg-white text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 2000,
+              style: {
+                background: "#fff",
+                color: "#363636",
+              },
+            }}
+          />
+        </body>
+      </AuthProvider>
     </html>
   );
 }
