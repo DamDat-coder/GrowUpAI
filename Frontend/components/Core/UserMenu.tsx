@@ -15,14 +15,14 @@ function UserMenu({ show }: Props) {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 px-3 py-2 bg-white/80 dark:bg-[#2b2b2b] rounded-full shadow cursor-pointer">
+      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50/80 dark:bg-[#2b2b2b] rounded-full shadow cursor-pointer">
         <User size={20} />
         <span className="font-medium">{user.name}</span>
       </div>
 
       {/* Dropdown */}
       {show && (
-        <div className="absolute right-0 top-10 w-60 bg-white dark:bg-[#2b2b2b] shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fadeIn">
+        <div className="absolute right-0 top-10 w-60 bg-gray-50 dark:bg-[#2b2b2b] shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fadeIn">
           <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
             <Settings size={16} /> Cài đặt tài khoản
           </button>

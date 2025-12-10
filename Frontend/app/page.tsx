@@ -34,11 +34,14 @@ export default function ChatPage() {
       <Header />
       <Sidebar />
 
-      <div className="flex-1 flex flex-col items-center overflow-y-auto pb-20 pt-24 dark:bg-[#1f1f1f]">
+      <div className="px-2 flex-1 flex flex-col items-center overflow-y-auto pb-20 pt-24 dark:bg-[#1f1f1f]">
         {!isFirstMessageSent && <Hero />}
         {isFirstMessageSent && <ChatMessages messages={messages} />}
 
-        <ChatInputBox onSend={handleSend} isFirstMessageSent={isFirstMessageSent} />
+        <ChatInputBox
+          onSend={handleSend}
+          isFirstMessageSent={isFirstMessageSent}
+        />
       </div>
     </main>
   );

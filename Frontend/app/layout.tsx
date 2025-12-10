@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <AuthProvider>
-        <body className="bg-white text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
+        <body className="bg-gray-50 text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
           {children}
           <Toaster
             position="top-right"

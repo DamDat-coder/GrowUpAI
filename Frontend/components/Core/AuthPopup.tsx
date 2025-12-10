@@ -71,7 +71,7 @@ export default function AuthPopup({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.85, opacity: 0, y: 20 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-[30%] shadow-xl relative"
+            className="bg-gray-50 dark:bg-[#1e1e1e] rounded-2xl p-6 w-[70%] tablet:w-[50%] laptop:w-[30%] shadow-xl relative"
           >
             {/* Close */}
             <button
@@ -141,7 +141,7 @@ export default function AuthPopup({
                 type="submit"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="mt-2 w-full py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black font-semibold hover:opacity-90 transition disabled:opacity-50"
+                className="mt-2 w-full py-2 rounded-lg bg-black text-white dark:bg-gray-50 dark:text-black font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
                 {loading
                   ? "Đang xử lý..."
