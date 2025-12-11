@@ -16,7 +16,7 @@ export default function Header() {
     <>
       <header className="hidden tablet:hidden laptop:flex desktop:flex absolute top-4 left-0 right-0 justify-center">
         {/* Logo */}
-        <div className="flex w-fit items-center justify-center gap-3 px-6 py-2 bg-gray-50/70 dark:bg-[#252525] backdrop-blur-md rounded-full shadow-sm font-semibold border border-gray-100">
+        <div className="flex w-fit items-center justify-center gap-3 px-6 bg-gray-50/70 dark:bg-[#252525] backdrop-blur-md rounded-full shadow-sm font-semibold border border-gray-100">
           <div className="p-1 rounded-lg">
             <Image
               src="/Core/logo.png"
