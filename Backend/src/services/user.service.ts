@@ -8,11 +8,18 @@ import { googleClient } from "../config/google";
  * Lấy user hiện tại
  */
 export const getCurrentUserService = async (userId: string) => {
-  const user = await UserModel.findById(userId)
-    .select("email name googleId createdAt")
+  const userObject = await UserModel.findById(userId)
+    .select("_id email name googleId createdAt")
     .lean();
 
-  if (!user) throw new Error("User not found");
+  if (!userObject) throw new Error("Không tìm thấy người dùng");
+
+  const { _id, ...rest } = userObject;
+
+  const user = {
+    id: _id.toString(),
+    ...rest,
+  };
 
   return user;
 };
@@ -20,9 +27,13 @@ export const getCurrentUserService = async (userId: string) => {
 /**
  * Đăng ký người dùng
  */
-export const registerUserService = async (email: string, password: string, name: string) => {
+export const registerUserService = async (
+  email: string,
+  password: string,
+  name: string
+) => {
   const exists = await UserModel.findOne({ email });
-  if (exists) throw new Error("Email already used");
+  if (exists) throw new Error("Email đã tồn tại!");
 
   const hash = await bcrypt.hash(password, 10);
   const refreshToken = generateRefreshToken(email);
@@ -48,12 +59,13 @@ export const registerUserService = async (email: string, password: string, name:
  */
 export const loginUserService = async (email: string, password: string) => {
   const user = await UserModel.findOne({ email });
-  if (!user) throw new Error("Email does not exist");
+  if (!user) throw new Error("Email không tồn tại");
 
-  if (!user.password) throw new Error("This account uses Google login");
+  if (!user.password)
+    throw new Error("Tài khoản này được đăng nhập với Google");
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error("Wrong password");
+  if (!isMatch) throw new Error("Sai mật khẩu");
 
   const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken(user._id.toString());
@@ -78,11 +90,11 @@ export const googleLoginService = async (id_token: string) => {
   });
 
   const payload = ticket.getPayload();
-  if (!payload) throw new Error("Google login failed");
+  if (!payload) throw new Error("Đăng nhập Google thất bại");
 
   const { email, name, sub: googleId } = payload;
 
-  if (!email) throw new Error("Cannot get email from Google");
+  if (!email) throw new Error("Không thể lấy email từ Google");
 
   let user = await UserModel.findOne({ email });
 
@@ -120,7 +132,7 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
   const user = await UserModel.findById(decoded.userId);
 
   if (!user || user.refreshToken !== refreshToken)
-    throw new Error("Invalid refresh token");
+    throw new Error("Token không hợp lệ");
 
   const newAccessToken = generateAccessToken(user._id.toString());
   return newAccessToken;

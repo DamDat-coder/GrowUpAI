@@ -22,7 +22,7 @@ export default function ChatInputBox({
   return (
     <div
       className={`
-        w-full max-w-3xl mx-auto flex flex-col items-center gap-3 
+        px-2 w-full max-w-3xl mx-auto flex flex-col items-center gap-3 
         transition-all duration-500 
         ${isFirstMessageSent ? "translate-y-2" : "translate-y-0"}
       `}
@@ -31,7 +31,7 @@ export default function ChatInputBox({
         bottom: isFirstMessageSent ? "2rem" : "auto",
       }}
     >
-      <div className="w-full bg-white shadow-lg rounded-3xl p-4 border border-gray-200  dark:bg-[#252525]">
+      <div className="w-full bg-gray-50 shadow-lg rounded-3xl p-4 border border-gray-200  dark:bg-[#252525]">
         <div className="flex items-center gap-3 border rounded-2xl p-3 bg-gray-50  dark:bg-[#252525]">
           <input
             value={input}
@@ -52,7 +52,7 @@ export default function ChatInputBox({
           </button>
         </div>
 
-        <div className="flex gap-2 mt-4 flex-wrap dark:text-black">
+        <div className="hidden tablet:flex gap-2 mt-4 flex-wrap dark:text-black">
           {suggestions.map((s) => (
             <button
               key={s}

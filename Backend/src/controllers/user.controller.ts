@@ -28,12 +28,25 @@ export const registerUser = async (
   next: NextFunction
 ) => {
   try {
-    
     const { email, password, name } = req.body;
 
-    console.log(">>> email:", email);
-    console.log(">>> password:", password);
-    console.log(">>> name:", name);
+    if (!email || !password || !name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu thông tin!" });
+    }
+
+    if (!email.includes("@")) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email không hợp lệ!" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu phải có ít nhất 6 ký tự!" });
+    }
 
     const data = await registerUserService(email, password, name);
     res.status(201).json({ success: true, data });
@@ -49,6 +62,12 @@ export const loginUser = async (
 ) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password)
+      return res
+        .status(400)
+        .json({ success: false, message: "Vui lòng nhập email và mật khẩu!" });
+
     const data = await loginUserService(email, password);
     res.json({ success: true, data });
   } catch (err) {
