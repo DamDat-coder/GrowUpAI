@@ -7,26 +7,50 @@ import Hero from "@/components/Home/Greeting";
 import ChatInputBox from "@/components/Home/ChatInputBox";
 import { Message } from "@/types/message";
 import ChatMessages from "@/components/Home/ChatMessages";
+import { sendMessage } from "@/services/chatApi";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isFirstMessageSent, setIsFirstMessageSent] = useState(false);
 
-  const handleSend = (text: string) => {
+  // ⭐ Lưu conversationId để gửi tiếp các tin nhắn sau
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const handleSend = async (text: string) => {
     if (!text.trim()) return;
 
-    // user message
-    const newMsg: Message = { role: "user", content: text };
-    setMessages((prev) => [...prev, newMsg]);
+    // 1️⃣ UI: thêm tin nhắn user trước
+    const userMsg: Message = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
 
     if (!isFirstMessageSent) setIsFirstMessageSent(true);
 
-    setTimeout(() => {
+    try {
+      // 2️⃣ Gửi API chính xác
+      const response = await sendMessage(text, conversationId ?? undefined);
+
+      const newConvId = response.data.conversationId;
+
+      // ⭐ Lưu conversationId để dùng cho các request tiếp theo
+      if (!conversationId) setConversationId(newConvId);
+
+      // 3️⃣ Lấy AI trả lời từ backend
+      const aiReply =
+        response.data.assistantMessage?.message ||
+        "AI không gửi phản hồi.";
+
+      const botMsg: Message = { role: "ai", content: aiReply };
+
+      // 4️⃣ Cập nhật UI
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      console.error("Gửi tin nhắn lỗi:", err);
+
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "Đây là phản hồi demo từ AI." },
+        { role: "ai", content: "Lỗi: không thể gửi tin nhắn" },
       ]);
-    }, 600);
+    }
   };
 
   return (

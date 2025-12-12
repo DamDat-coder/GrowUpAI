@@ -3,7 +3,7 @@ import { Message } from "@/types/message";
 
 export default function ChatMessages({ messages }: { messages: Message[] }) {
   return (
-    <div className="w-full h-[90vh] overflow-scroll pb-10 max-w-3xl mx-auto flex flex-col gap-4 scroll-hidden">
+    <div className="w-full h-[80%] overflow-scroll pb-10 max-w-3xl mx-auto flex flex-col gap-4 scroll-hidden">
       {messages.map((m, idx) => (
         <div
           key={idx}
