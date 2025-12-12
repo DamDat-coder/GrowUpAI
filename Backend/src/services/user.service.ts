@@ -8,11 +8,18 @@ import { googleClient } from "../config/google";
  * Lấy user hiện tại
  */
 export const getCurrentUserService = async (userId: string) => {
-  const user = await UserModel.findById(userId)
-    .select("email name googleId createdAt")
+  const userObject = await UserModel.findById(userId)
+    .select("_id email name googleId createdAt")
     .lean();
 
-  if (!user) throw new Error("Không tìm thấy người dùng");
+  if (!userObject) throw new Error("Không tìm thấy người dùng");
+
+  const { _id, ...rest } = userObject;
+
+  const user = {
+    id: _id.toString(),
+    ...rest,
+  };
 
   return user;
 };
@@ -54,7 +61,8 @@ export const loginUserService = async (email: string, password: string) => {
   const user = await UserModel.findOne({ email });
   if (!user) throw new Error("Email không tồn tại");
 
-  if (!user.password) throw new Error("Tài khoản này được đăng nhập với Google");
+  if (!user.password)
+    throw new Error("Tài khoản này được đăng nhập với Google");
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Sai mật khẩu");

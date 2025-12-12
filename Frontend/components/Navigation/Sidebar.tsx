@@ -36,15 +36,16 @@ interface BaseItem {
 
 export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoadingAuth } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // ✅ SỬ DỤNG CUSTOM HOOK THAY CHO STATE VÀ useEffect
+  const isAuthInitialized = !isLoadingAuth;
+  
   const { conversations, refetchConversations } = useConversationCache(
-    user?.id || null
+    user?.id || null,
+    isAuthInitialized
   );
 
   // ✅ SỬ DỤNG useCallback để ổn định hàm đóng Mobile Menu
@@ -60,6 +61,7 @@ export default function Sidebar() {
   // 🔴 LOGIC TẠO MỚI (Sử dụng refetchConversations để cập nhật Cache)
   const handleCreateNewConversation = async (): Promise<void> => {
     if (open) closeMobileMenuCallback();
+    console.log("user trong hàm handleCreateNewConversation:", user);
 
     if (!user) {
       setShowAuth(true);
@@ -69,7 +71,6 @@ export default function Sidebar() {
     try {
       const newConv = (await createConversation()) as Conversation;
 
-      // ✅ Cập nhật cache sau khi tạo mới và fetch lại data mới nhất
       await refetchConversations();
 
       console.log(`Chuyển hướng đến /chat/${newConv._id}`);

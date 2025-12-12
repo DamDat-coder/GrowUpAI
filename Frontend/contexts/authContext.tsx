@@ -25,6 +25,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  isLoadingAuth: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // --- Check current user ---
   const checkAuth = async () => {
     const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
+   if (!accessToken) {
       setUser(null);
       return;
     }
@@ -140,6 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     logout,
     checkAuth,
+    isLoadingAuth: loading
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
