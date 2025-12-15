@@ -134,14 +134,14 @@ export default function Sidebar() {
               onClick={actionItemWithAction.action}
               className="m-0 flex items-center gap-3 mx-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:text-black transition-all"
             >
-              <span className="min-w-10 h-10 flex items-center justify-center text-blue-500">
+              <span className="min-w-10 h-10 flex items-center justify-center bg-linear-to-r from-blue-600 to-purple-600 text-blue-600 bg-clip-text">
                 {actionItemWithAction.icon}
               </span>
               <span
                 className="
                     text-sm font-medium opacity-0 
                     group-hover:opacity-100 group-hover:translate-x-0 
-                    -translate-x-2 transition-all duration-300 whitespace-nowrap text-blue-500
+                    -translate-x-2 transition-all duration-300 whitespace-nowrap bg-linear-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text
                 "
               >
                 {actionItemWithAction.label}
@@ -185,10 +185,15 @@ export default function Sidebar() {
                 className="
                       text-sm font-medium opacity-0 
                       group-hover:opacity-100 group-hover:translate-x-0 
-                      -translate-x-2 transition-all duration-300 whitespace-nowrap grow
+                      -translate-x-2 transition-all duration-300 whitespace-nowrap grow flex justify-between items-center mr-3
                     "
               >
                 Hội thoại
+                {isDropdownOpen ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
               </span>
             </button>
             {/* Danh sách Dropdown (Desktop) */}
