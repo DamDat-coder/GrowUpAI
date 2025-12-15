@@ -4,7 +4,6 @@
 import Link from "next/link";
 import React, { memo } from "react";
 import { ConversationListProps } from "@/types/conversation";
-import { MessagesSquare } from "lucide-react";
 /**
  * Hiển thị danh sách các hội thoại đã lưu.
  * Áp dụng memo để tránh re-render không cần thiết.
@@ -32,8 +31,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
             "
             title={conv.title}
           >
-            {/* Thêm một chút biểu tượng để làm nổi bật */}
-            <MessagesSquare size={16} className="text-gray-400 min-w-4" />
             <span className="truncate">{conv.title}</span>
           </Link>
         ))}
