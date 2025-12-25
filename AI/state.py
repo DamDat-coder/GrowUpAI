@@ -25,10 +25,11 @@ with open("./train/prompts_model_actions.txt", "r", encoding="utf-8") as f:
     ASK_MODEL_ACTION = [line.strip() for line in f if line.strip()]
 
 # Dữ liệu cho Intent Classification (task_identification.csv)
-task_identification = pd.read_csv("./train/task_identification.csv")
-TARGET_TASK_IDENTIFICATION = task_identification["label"]
+TASK_DF = pd.read_csv("./train/task_identification.csv")
+
+TARGET_TASK_IDENTIFICATION = TASK_DF["label"]
 EMBEDDINGS_TASK = SBERT_MODEL.encode(
-    task_identification["text"], convert_to_tensor=True, normalize_embeddings=True
+    TASK_DF["text"].tolist(), convert_to_tensor=True, normalize_embeddings=True
 )
 
 # Dữ liệu cho Action Classification (actions_with_file.csv)

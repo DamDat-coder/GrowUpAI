@@ -34,44 +34,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const addressSchema = new mongoose_1.Schema({
-    street: { type: String, required: false, trim: true },
-    ward: { type: String, required: false, trim: true },
-    province: { type: String, required: false, trim: true },
-    is_default: { type: Boolean, default: false },
-}, {
-    _id: true,
-});
 const userSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: false },
+    password: { type: String, default: null },
     name: { type: String, required: true, trim: true },
-    addresses: [addressSchema],
-    phone: {
-        type: String,
-        default: null,
-        unique: true,
-        sparse: true,
-    },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    is_active: { type: Boolean, default: true },
-    refreshToken: { type: String, default: null },
-    wishlist: [
-        {
-            type: mongoose_1.Schema.Types.ObjectId,
-            ref: "Product",
-        },
-    ],
     googleId: { type: String, default: null },
+    refreshToken: { type: String, default: null },
 }, {
     timestamps: true,
     versionKey: false,
 });
-userSchema.index({ email: 1 });
-userSchema.index({ name: 1 });
-userSchema.index({ role: 1 });
-userSchema.index({ is_active: 1 });
-userSchema.index({ phone: 1 }, { unique: true, sparse: true });
-userSchema.index({ googleId: 1 }, { sparse: true });
 const UserModel = mongoose_1.default.model("User", userSchema);
 exports.default = UserModel;

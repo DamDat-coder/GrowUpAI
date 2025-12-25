@@ -1,7 +1,8 @@
 # tasks/calculator.py
 import sympy as sp
 import re
-from utils.data_prep import extract_expression_from_text # Import hàm đã tách
+from utils.data_prep import extract_expression_from_text  # Import hàm đã tách
+
 
 class Calculator:
     def __init__(self):
@@ -23,12 +24,12 @@ class Calculator:
             return "Không phát hiện yêu cầu tính toán trong câu này."
 
         # Sử dụng hàm đã tách
-        expr = extract_expression_from_text(text) 
+        expr = extract_expression_from_text(text)
         try:
             x = sp.Symbol("x")
-            
+
             # ... (Logic xử lý so sánh, bằng mấy, phương trình, tính biểu thức giữ nguyên) ...
-            
+
             # --- 3. Trường hợp có dạng “có bằng ... không” ---
             match_compare = re.search(
                 r"(.+?)\s*có\s*bằng\s*([0-9xX\+\-\*/\^=\s\.]+)", text
@@ -47,7 +48,7 @@ class Calculator:
             if any(kw in text for kw in ["bằng mấy", "bằng bao nhiêu", "bao nhiêu"]):
                 expr = re.sub(r"bằng\s*mấy|bằng\s*bao\s*nhiêu|bao\s*nhiêu", "", expr)
                 result = sp.simplify(expr)
-                return f"Kết quả là: {result}"
+                return result
 
             # --- 5. Nếu có dấu '=' → phương trình ---
             if "=" in expr:
