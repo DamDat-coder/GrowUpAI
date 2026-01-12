@@ -8,7 +8,10 @@ import state
 
 from tasks.calculator import Calculator
 from tasks.data_handler import DataHandler
+from core.executor import Executor
+from core.tools import tool_web_search, tool_llm_reasoning, tool_calculator
 from core.understand import understand
+from core.planner import plan
 
 # =====================
 # IO & Warning config
@@ -22,6 +25,16 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # =====================
 calculator = Calculator()
 data_handler = DataHandler()
+# =====================
+# Init components
+# =====================
+tools_registry = {
+    "web_search": tool_web_search,
+    "ask_llm": tool_llm_reasoning,
+    "compute": tool_calculator,
+    "ask_user_clarify": lambda x: "Yêu cầu người dùng cung cấp thêm thông tin."
+}
+executor = Executor(tools=tools_registry)
 
 print("Gõ 'exit' hoặc 'quit' để thoát.")
 
@@ -40,30 +53,16 @@ while True:
         data_handler.close_file()
         continue
 
-    # =====================
-    # UNDERSTAND
-    # =====================
     problem = understand(user_text, state)
+    if not problem:
+        print("\nLỗi: Không thể giải mã ý định."); continue
 
-    print("\n[AI UNDERSTAND]")
-    print(f"- Goal: {problem['goal']}")
-    print(f"- Confidence: {problem['confidence']:.2f}")
-    print(f"- Needs external knowledge: {problem['requires_external_knowledge']}")
-    print(f"- Context: {problem['context']}")
-    print(f"- Debug: {problem['debug']}")
+    print(f"\n[AI UNDERSTAND] Goal: {problem['goal']} | Needs Search: {problem['requires_external_knowledge']}")
 
-    # =====================
-    # 🚧 TẠM THỜI EXECUTE (CHƯA PHẢI PLANNER)
-    # =====================
-    if problem["goal"] == "solve_numeric_problem":
-        result = calculator.calculation(user_text)
-        print("\n👉 Kết quả:", result)
+    execution_plan = plan(problem) 
 
-    elif problem["goal"] == "analyze_data":
-        if state.CURRENT_MODEL is None:
-            data_handler.load_and_train_model()
-        else:
-            print("👉 Dataset đã sẵn sàng, chờ planner quyết định bước tiếp theo.")
+    result_context = executor.run(execution_plan)
 
-    else:
-        print("\n🤔 Tôi hiểu yêu cầu, nhưng chưa biết nên làm gì tiếp.")
+    print("\n[AI CONTEXT]")
+    for action_name, output in result_context.items():
+        print(f"[{action_name.upper()}]: {output}")

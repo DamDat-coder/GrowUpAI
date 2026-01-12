@@ -61,7 +61,7 @@ class Calculator:
 
             # --- 6. Mặc định: tính giá trị biểu thức ---
             result = sp.simplify(expr)
-            return f"Kết quả là: {result}"
+            return result
 
         except Exception:
             return f"Mình không hiểu biểu thức này: {expr}"
