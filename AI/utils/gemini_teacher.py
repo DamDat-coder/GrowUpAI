@@ -25,7 +25,6 @@ def fallback_understand(user_text):
 def ask_gemini_to_understand(
     user_text: str, available_goals: list, intent_signal: str | None = None
 ):
-    print("user_text-gemini_teacher ", user_text)
     if not client:
         return fallback_understand(user_text)
 
@@ -68,3 +67,58 @@ Quy tắc:
     except Exception as e:
         print(f"[Gemini ERROR] {e}")
         return fallback_understand(user_text)
+
+def ask_gemini_to_reason(
+    question: str,
+    context_info: str = "",
+    temperature: float = 0.3,
+    max_tokens: int = 1200
+) -> str:
+    """
+    Gọi Gemini để sinh câu trả lời dựa trên context.
+    """
+    if not client:
+        return "[Fallback] Không có kết nối đến Gemini. Vui lòng kiểm tra API key."
+
+    prompt = f"""
+Bạn là trợ lý thông minh, trả lời tự nhiên, chính xác, ngắn gọn và hữu ích bằng tiếng Việt.
+
+Thông tin tham khảo (nếu có):
+{context_info if context_info else "Không có thông tin bổ sung từ web hoặc dữ liệu."}
+
+Câu hỏi / yêu cầu của người dùng:
+{question}
+
+Hướng dẫn trả lời:
+- Trả lời trực tiếp, không lặp lại prompt.
+- Nếu thông tin không đủ → nói rõ và gợi ý hỏi thêm.
+- Giữ giọng điệu thân thiện, gần gũi.
+- Không bịa thông tin.
+"""
+
+    # Chuẩn bị config đúng cách
+    generation_config = types.GenerateContentConfig(
+        temperature=temperature,
+        max_output_tokens=max_tokens,
+        # Bạn có thể thêm các tham số khác nếu cần:
+        # candidate_count=1,
+        # top_p=0.95,
+        # response_mime_type="text/plain",
+    )
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-flash-latest",   # hoặc gemini-1.5-pro-latest, gemini-2.0-flash,...
+            contents=prompt,
+            config=generation_config,           # ← truyền config ở đây (không phải generation_config)
+        )
+        
+        answer = response.text.strip()
+        if not answer:
+            return "[Gemini] Không nhận được phản hồi hợp lệ."
+        
+        return answer
+
+    except Exception as e:
+        print(f"[Gemini Reasoning ERROR] {str(e)}")
+        return f"[Lỗi khi gọi Gemini] {str(e)}. Vui lòng thử lại hoặc cung cấp thêm thông tin."

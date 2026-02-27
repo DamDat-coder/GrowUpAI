@@ -9,7 +9,12 @@ import state
 from tasks.calculator import Calculator
 from tasks.data_handler import DataHandler
 from core.executor import Executor
-from core.tools import tool_web_search, tool_llm_reasoning, tool_calculator
+from core.tools import (
+    tool_web_search,
+    tool_llm_reasoning,
+    tool_calculator,
+    tool_rewrite_search_query,
+)
 from core.understand import understand
 from core.planner import plan
 
@@ -32,7 +37,8 @@ tools_registry = {
     "web_search": tool_web_search,
     "ask_llm": tool_llm_reasoning,
     "compute": tool_calculator,
-    "ask_user_clarify": lambda x: "Yêu cầu người dùng cung cấp thêm thông tin."
+    "rewrite_search_query": tool_rewrite_search_query,
+    "ask_user_clarify": lambda x: "Yêu cầu người dùng cung cấp thêm thông tin.",
 }
 executor = Executor(tools=tools_registry)
 
@@ -55,11 +61,16 @@ while True:
 
     problem = understand(user_text, state)
     if not problem:
-        print("\nLỗi: Không thể giải mã ý định."); continue
+        print("\nLỗi: Không thể giải mã ý định.")
+        continue
 
-    print(f"\n[AI UNDERSTAND] Goal: {problem['goal']} | Needs Search: {problem['requires_external_knowledge']}")
+    print(
+        f"\n[AI UNDERSTAND] Goal: {problem['goal']} | Needs Search: {problem['requires_external_knowledge']}"
+    )
 
-    execution_plan = plan(problem) 
+    execution_plan = plan(problem)
+
+    execution_plan["original_question"] = problem["text"]
 
     result_context = executor.run(execution_plan)
 
