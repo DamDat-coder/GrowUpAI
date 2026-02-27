@@ -1,5 +1,6 @@
 # core/planner.py
 
+
 def plan(problem: dict) -> dict:
     goal = problem["goal"]
     needs_knowledge = problem["requires_external_knowledge"]
@@ -21,8 +22,9 @@ def plan(problem: dict) -> dict:
     elif goal == "information_seeking" or goal == "learning_explanation":
         if needs_knowledge:
             steps = [
-                {"action": "web_search", "input": user_text},
-                {"action": "ask_llm", "input": f"Dựa vào thông tin tìm được, hãy trả lời câu hỏi: {user_text}"}
+                {"action": "rewrite_search_query", "input": problem["text"]},
+                {"action": "web_search"},
+                {"action": "ask_llm"},
             ]
         else:
             steps = [{"action": "ask_llm", "input": user_text}]
@@ -33,10 +35,11 @@ def plan(problem: dict) -> dict:
 
     # 5. Mặc định nếu không hiểu
     else:
-        steps = [{"action": "ask_user_clarify", "input": "Tôi chưa rõ ý bạn, bạn có thể nói chi tiết hơn không?"}]
+        steps = [
+            {
+                "action": "ask_user_clarify",
+                "input": "Tôi chưa rõ ý bạn, bạn có thể nói chi tiết hơn không?",
+            }
+        ]
 
-    return {
-        "goal": goal,
-        "steps": steps,
-        "status": "planned"
-    }
+    return {"goal": goal, "steps": steps, "status": "planned"}
