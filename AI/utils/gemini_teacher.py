@@ -1,15 +1,12 @@
+# core/gemini_teacher.py
 import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-import state
 import json
-from sentence_transformers import util
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
-
-# Khởi tạo Client
 client = genai.Client(api_key=api_key) if api_key else None
 
 
@@ -18,107 +15,105 @@ def fallback_understand(user_text):
         "goal": "information_seeking",
         "confidence": 0.3,
         "requires_external_knowledge": True,
-        "explanation": "Fallback mode - default to information seeking",
+        "explanation": "Fallback mode",
     }
 
 
 def ask_gemini_to_understand(
-    user_text: str, available_goals: list, intent_signal: str | None = None
+    user_text: str,
+    available_goals: list,
+    intent_signal: str | None = None,
+    history: list = None,
 ):
     if not client:
         return fallback_understand(user_text)
 
+    # Xây dựng lịch sử cho prompt
+    history_text = ""
+    if history:
+        history_text = "\n".join([
+            f"- {'User' if msg['role']=='user' else 'AI'}: {msg['content'][:200]}"
+            for msg in history[-4:]
+        ])
+
     prompt = f"""
-Bạn là một AI có nhiệm vụ HIỂU VẤN ĐỀ người dùng, không phải phân loại intent.
+Bạn là AI hiểu vấn đề người dùng.
+Lịch sử cuộc trò chuyện gần đây:
+{history_text or "Chưa có lịch sử."}
 
-Câu người dùng:
-\"{user_text}\"
+Câu hỏi hiện tại: "{user_text}"
 
-Thông tin tham khảo (không bắt buộc đúng):
-- Intent gợi ý từ hệ thống: {intent_signal}
+Intent gợi ý: {intent_signal or "Không có"}
 
-Các goal hợp lệ:
-{available_goals}
+Các goal hợp lệ: {available_goals}
 
-Hãy suy luận goal PHÙ HỢP NHẤT và trả về JSON:
+Trả về đúng JSON:
 {{
   "goal": "...",
-  "confidence": 0.0,
+  "confidence": 0.0-1.0,
   "requires_external_knowledge": true/false,
-  "explanation": "giải thích ngắn gọn vì sao chọn goal này"
+  "explanation": "lý do ngắn gọn"
 }}
-
-Quy tắc:
-- Chỉ chọn goal trong danh sách
-- Nếu không chắc → goal = "unknown"
+Chỉ chọn goal trong danh sách. Nếu không chắc thì goal = "general_chat".
 """
 
     try:
         response = client.models.generate_content(
             model="gemini-flash-latest",
             contents=prompt,
-            config={
-                "temperature": 0,
-                "response_mime_type": "application/json",
-            },
+            config=types.GenerateContentConfig(
+                temperature=0,
+                max_output_tokens=500,
+                response_mime_type="application/json",
+            ),
         )
         return json.loads(response.text)
-
     except Exception as e:
-        print(f"[Gemini ERROR] {e}")
+        print(f"[Gemini Understand ERROR] {e}")
         return fallback_understand(user_text)
 
+
+# === HÀM MỚI (dùng cho tool_llm_reasoning) ===
 def ask_gemini_to_reason(
     question: str,
     context_info: str = "",
+    history: list = None,
     temperature: float = 0.3,
-    max_tokens: int = 1200
+    max_tokens: int = 1000
 ) -> str:
-    """
-    Gọi Gemini để sinh câu trả lời dựa trên context.
-    """
     if not client:
-        return "[Fallback] Không có kết nối đến Gemini. Vui lòng kiểm tra API key."
+        return "[Lỗi] Không kết nối được Gemini."
+
+    history_text = ""
+    if history:
+        history_text = "\n".join([
+            f"{'User' if m['role']=='user' else 'AI'}: {m['content'][:300]}"
+            for m in history[-6:]
+        ])
 
     prompt = f"""
-Bạn là trợ lý thông minh, trả lời tự nhiên, chính xác, ngắn gọn và hữu ích bằng tiếng Việt.
+Lịch sử cuộc trò chuyện:
+{history_text or "Không có lịch sử."}
 
-Thông tin tham khảo (nếu có):
-{context_info if context_info else "Không có thông tin bổ sung từ web hoặc dữ liệu."}
+Thông tin tham khảo (từ web hoặc dữ liệu):
+{context_info if context_info else "Không có thông tin bổ sung."}
 
-Câu hỏi / yêu cầu của người dùng:
-{question}
+Câu hỏi hiện tại: {question}
 
-Hướng dẫn trả lời:
-- Trả lời trực tiếp, không lặp lại prompt.
-- Nếu thông tin không đủ → nói rõ và gợi ý hỏi thêm.
-- Giữ giọng điệu thân thiện, gần gũi.
-- Không bịa thông tin.
+Trả lời tự nhiên, chính xác, bằng tiếng Việt, giọng thân thiện.
+Không bịa thông tin. Nếu không biết thì nói rõ.
 """
-
-    # Chuẩn bị config đúng cách
-    generation_config = types.GenerateContentConfig(
-        temperature=temperature,
-        max_output_tokens=max_tokens,
-        # Bạn có thể thêm các tham số khác nếu cần:
-        # candidate_count=1,
-        # top_p=0.95,
-        # response_mime_type="text/plain",
-    )
 
     try:
         response = client.models.generate_content(
-            model="gemini-flash-latest",   # hoặc gemini-1.5-pro-latest, gemini-2.0-flash,...
+            model="gemini-flash-latest",
             contents=prompt,
-            config=generation_config,           # ← truyền config ở đây (không phải generation_config)
+            config=types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+            ),
         )
-        
-        answer = response.text.strip()
-        if not answer:
-            return "[Gemini] Không nhận được phản hồi hợp lệ."
-        
-        return answer
-
+        return response.text.strip()
     except Exception as e:
-        print(f"[Gemini Reasoning ERROR] {str(e)}")
-        return f"[Lỗi khi gọi Gemini] {str(e)}. Vui lòng thử lại hoặc cung cấp thêm thông tin."
+        print(f"[Gemini Reasoning ERROR] {e}")
+        return f"[Lỗi Gemini] {str(e)}"

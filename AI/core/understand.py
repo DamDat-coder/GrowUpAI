@@ -2,57 +2,67 @@
 from core.goals import AVAILABLE_GOALS
 from utils.nlp_tools import predict_intent
 from utils.gemini_teacher import ask_gemini_to_understand
+from state import add_new_task_example
 
-# Ánh xạ intent → goal (mềm, có thể thay đổi)
-INTENT_TO_GOAL = {
-    "calculation": "solve_numeric_problem",
-    "handle_file": "analyze_data",
-}
+# Cache để tránh gọi Gemini lặp lại cùng câu
+UNDERSTAND_CACHE = {}
 
 
 def understand(user_text: str, state) -> dict:
-    intent, intent_conf = predict_intent(user_text)
+    # === CACHE ===
+    if user_text in UNDERSTAND_CACHE:
+        print("[DEBUG] Hit understand cache")
+        return UNDERSTAND_CACHE[user_text].copy()
 
-    # 1. Khởi tạo một template chuẩn cho Context (vì nó luôn lấy từ state)
+    intent, intent_conf = predict_intent(user_text)   # intent giờ chính là GOAL
+
     current_context = {
         "current_file": state.CURRENT_FILE_NAME,
         "has_model": state.CURRENT_MODEL is not None,
     }
 
-    # 2. Trường hợp SBERT tự tin (Short-circuit)
-    if intent_conf >= 0.9:
-        return {
+    # === SHORT-CIRCUIT (không còn INTENT_TO_GOAL nữa) ===
+    if intent_conf >= 0.75:
+        result = {
             "text": user_text,
             "intent_signal": intent,
             "confidence": intent_conf,
-            "goal": "information_seeking",  # Chỗ này bạn có thể logic hóa thêm
-            "requires_external_knowledge": True,
+            "goal": intent,                                      # ← trực tiếp dùng label từ CSV
+            "requires_external_knowledge": intent in ("information_seeking", "learning_explanation"),
             "context": current_context,
             "debug": {"source": "intent_short_circuit"},
         }
+        UNDERSTAND_CACHE[user_text] = result
+        return result
 
-    # 3. Trường hợp nhờ Gemini tư duy
-    result = ask_gemini_to_understand(
+    # === GỌI GEMINI (fallback) ===
+    gemini_result = ask_gemini_to_understand(
         user_text=user_text,
         available_goals=AVAILABLE_GOALS,
         intent_signal=intent,
+        history=state.CONVERSATION_HISTORY,
     )
 
-    # Đảm bảo result không phải None (phòng lỗi subscriptable trước đó)
-    if not result:
-        result = {
-            "goal": "general_chat",
-            "confidence": 0.0,
-            "requires_external_knowledge": False,
-        }
+    result = gemini_result or {
+        "goal": "general_chat",
+        "confidence": 0.0,
+        "requires_external_knowledge": False,
+    }
 
-    # 4. MERGE (Hợp nhất): Bổ sung những phím còn thiếu vào result trước khi trả về
     result["context"] = current_context
     result["text"] = user_text
     result["intent_signal"] = intent
-
-    # Nếu Gemini quên không trả về debug, ta tự thêm vào
     if "debug" not in result:
         result["debug"] = {"source": "gemini_reasoning"}
 
+    # === TỰ HỌC: Lưu vào dataset để lần sau SBERT biết luôn ===
+    if (
+        result.get("debug", {}).get("source") == "gemini_reasoning"
+        and result.get("confidence", 0) >= 0.65          # chỉ lưu khi Gemini khá chắc
+        and result["goal"] != "unknown"
+        and result["goal"] in AVAILABLE_GOALS
+    ):
+        add_new_task_example(user_text, result["goal"])
+
+    UNDERSTAND_CACHE[user_text] = result
     return result
