@@ -77,3 +77,17 @@ while True:
     print("\n[AI CONTEXT]")
     for action_name, output in result_context.items():
         print(f"[{action_name.upper()}]: {output}")
+
+    if action_name == "ask_llm":  # hoặc action cuối cùng
+        final_answer = output
+
+    # === LƯU HISTORY ===
+    state.CONVERSATION_HISTORY.append({"role": "user", "content": user_text})
+    if final_answer:
+        state.CONVERSATION_HISTORY.append(
+            {"role": "assistant", "content": final_answer}
+        )
+
+    # Giới hạn history (giữ nhẹ cho Gemini)
+    if len(state.CONVERSATION_HISTORY) > 20:
+        state.CONVERSATION_HISTORY = state.CONVERSATION_HISTORY[-20:]

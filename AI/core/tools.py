@@ -14,27 +14,23 @@ def tool_web_search(user_input: str, context: dict):
     except Exception as e:
         return f"Lỗi tìm kiếm: {e}"
 
+
 # core/tools.py
 
 
 def tool_llm_reasoning(user_input: str, context: dict):
-    print("    [Tool] Đang tổng hợp bằng LLM (Gemini)...")
+    print("    [Tool] Đang tổng hợp bằng Gemini (có history)...")
 
-    # Lấy thông tin cần thiết từ context (do executor truyền vào)
     search_result = context.get("web_search", "")
     original_question = context.get("original_question", user_input)
-    
-    # Chuẩn bị context_info để đưa vào prompt
-    context_info = ""
-    if search_result:
-        context_info = f"Kết quả tìm kiếm từ web:\n{search_result}\n\n"
-    
-    # Gọi hàm Gemini reasoning
+
+    context_info = f"Kết quả tìm kiếm:\n{search_result}" if search_result else ""
+
     final_answer = ask_gemini_to_reason(
         question=original_question,
         context_info=context_info,
-        temperature=0.3,           # thấp để bám sát thông tin
-        max_tokens=1000
+        history=state.CONVERSATION_HISTORY,  # ← TRUYỀN HISTORY
+        temperature=0.3,
     )
 
     return final_answer
@@ -72,7 +68,7 @@ def tool_rewrite_search_query(user_text: str, context: dict):
     for p in remove_patterns:
         query = query.replace(p, "")
 
-    print("[DEBUG remove_patterns]: ",query)
+    print("[DEBUG remove_patterns]: ", query)
 
     query = query.strip()
 

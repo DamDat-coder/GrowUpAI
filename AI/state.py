@@ -11,6 +11,8 @@ CURRENT_DF = None  # DataFrame đang làm việc
 CURRENT_MODEL = None  # Model ML đã được huấn luyện/tải
 CURRENT_FILE_NAME = None  # Tên file đang làm việc
 MODEL_DIR = "./models"
+
+CONVERSATION_HISTORY = []
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # State về Cấu hình và NLP
@@ -38,3 +40,35 @@ TARGET_ACTION_WITH_FILE = action_with_file["label"]
 EMBEDDINGS_ACTION = SBERT_MODEL.encode(
     action_with_file["text"], convert_to_tensor=True, normalize_embeddings=True
 )
+
+
+def add_new_task_example(text: str, label: str) -> bool:
+    """
+    Thêm ví dụ mới vào task_identification.csv và cập nhật embeddings ngay lập tức.
+    Trả về True nếu thêm thành công (không trùng).
+    """
+    global TASK_DF, EMBEDDINGS_TASK, TARGET_TASK_IDENTIFICATION
+
+    # Kiểm tra trùng lặp (không phân biệt hoa thường, khoảng trắng)
+    if any(TASK_DF["text"].str.strip().str.lower() == text.strip().lower()):
+        print(f"[SELF-LEARN] Ví dụ đã tồn tại: {text[:80]}...")
+        return False
+
+    # Thêm vào DataFrame
+    new_row = pd.DataFrame([{"text": text, "label": label}])
+    TASK_DF = pd.concat([TASK_DF, new_row], ignore_index=True)
+
+    # Encode chỉ câu mới (rất nhanh)
+    new_emb = SBERT_MODEL.encode(
+        [text], convert_to_tensor=True, normalize_embeddings=True
+    )
+    EMBEDDINGS_TASK = torch.cat([EMBEDDINGS_TASK, new_emb], dim=0)
+
+    # Cập nhật target
+    TARGET_TASK_IDENTIFICATION = TASK_DF["label"].reset_index(drop=True)
+
+    # Lưu file CSV
+    TASK_DF.to_csv("./train/task_identification.csv", index=False, encoding="utf-8")
+
+    print(f"[SELF-LEARN] ĐÃ THÊM tự động: {text[:70]}... → {label}")
+    return True
