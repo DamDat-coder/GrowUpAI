@@ -1,2 +1,5 @@
 **/.env
 temp.txt
+venv/
+__pycache__/
+.gitignore
