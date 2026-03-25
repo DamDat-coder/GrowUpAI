@@ -16,11 +16,6 @@ def understand(user_text: str, state) -> dict:
 
     intent, intent_conf = predict_intent(user_text)   # intent giờ chính là GOAL
 
-    current_context = {
-        "current_file": state.CURRENT_FILE_NAME,
-        "has_model": state.CURRENT_MODEL is not None,
-    }
-
     # === SHORT-CIRCUIT (không còn INTENT_TO_GOAL nữa) ===
     if intent_conf >= 0.75:
         result = {
@@ -29,7 +24,6 @@ def understand(user_text: str, state) -> dict:
             "confidence": intent_conf,
             "goal": intent,                                      # ← trực tiếp dùng label từ CSV
             "requires_external_knowledge": intent in ("information_seeking", "learning_explanation"),
-            "context": current_context,
             "debug": {"source": "intent_short_circuit"},
         }
         UNDERSTAND_CACHE[user_text] = result
@@ -49,7 +43,6 @@ def understand(user_text: str, state) -> dict:
         "requires_external_knowledge": False,
     }
 
-    result["context"] = current_context
     result["text"] = user_text
     result["intent_signal"] = intent
     if "debug" not in result:

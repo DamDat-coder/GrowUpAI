@@ -5,13 +5,82 @@ from google import genai
 from google.genai import types
 import json
 
-from RAG.query import query as local_rag_query
+from core.engine import get_rag_context as local_rag_query
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
 
-# ... (Giữ nguyên hàm fallback và ask_gemini_to_understand) ...
+def fallback_understand(user_text):
+    return {
+        "goal": "information_seeking",
+        "confidence": 0.3,
+        "requires_external_knowledge": True,
+        "explanation": "Fallback mode",
+    }
+
+
+def ask_gemini_to_understand(
+    user_text: str,
+    available_goals: list,
+    intent_signal: str | None = None,
+    history: list = None,
+):
+    if not client:
+        return fallback_understand(user_text)
+
+    # Xây dựng lịch sử cho prompt
+    history_text = ""
+    if history:
+        history_text = "\n".join(
+            [
+                f"- {'User' if msg['role']=='user' else 'AI'}: {msg['content'][:200]}"
+                for msg in history[-4:]
+            ]
+        )
+
+    prompt = f"""
+Bạn là AI hiểu vấn đề người dùng.
+Lịch sử cuộc trò chuyện gần đây:
+{history_text or "Chưa có lịch sử."}
+
+Câu hỏi hiện tại: "{user_text}"
+
+
+Intent gợi ý: {intent_signal or "Không có"}
+
+
+Các goal hợp lệ: {available_goals}
+
+
+Trả về đúng JSON:
+{{
+  "goal": "...",
+  "confidence": 0.0-1.0,
+  "requires_external_knowledge": true/false,
+  "explanation": "lý do ngắn gọn"
+}}
+Chỉ chọn goal trong danh sách. Nếu không chắc thì goal = "general_chat".
+
+
+
+"""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-flash-latest",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0,
+                max_output_tokens=500,
+                response_mime_type="application/json",
+            ),
+        )
+        return json.loads(response.text)
+
+    except Exception as e:
+        print(f"[Gemini Understand ERROR] {e}")
+        return fallback_understand(user_text)
 
 
 def ask_gemini_to_reason(
@@ -64,7 +133,7 @@ Yêu cầu:
 
     try:
         response = client.models.generate_content(
-            model="gemini-1.5-flash",  # Hoặc gemini-2.0-flash-exp nếu bạn muốn tốc độ cao hơn
+            model="gemini-2.5-flash-lite",  # Hoặc gemini-2.0-flash-exp nếu bạn muốn tốc độ cao hơn
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=temperature,

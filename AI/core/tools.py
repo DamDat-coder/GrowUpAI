@@ -1,6 +1,6 @@
 # core/tools.py
-from ddgs import DDGS
-
+from core.engine import get_rag_context
+from duckduckgo_search import DDGS
 from utils.gemini_teacher import ask_gemini_to_reason
 import state  # Giả sử bạn dùng file state để lưu ngữ cảnh
 
@@ -15,25 +15,40 @@ def tool_web_search(user_input: str, context: dict):
         return f"Lỗi tìm kiếm: {e}"
 
 
-# core/tools.py
+def tool_rag_search(user_input: str, context: dict):
+    """Tìm kiếm kiến thức nội bộ từ tài liệu đã upload."""
+    print(f"    [Tool] Đang truy vấn tài liệu nội bộ cho: {user_input}...")
+    rag_data = get_rag_context(user_input)
+    # Lưu vào context để step sau (ask_llm) có thể lấy dùng
+    context["rag_result"] = rag_data
+    return rag_data
 
 
 def tool_llm_reasoning(user_input: str, context: dict):
-    print("    [Tool] Đang tổng hợp bằng Gemini (có history)...")
+    """Gemini tổng hợp thông tin từ tất cả các nguồn (Web, RAG, History)."""
+    print("    [Tool] Gemini đang suy luận tổng hợp...")
 
-    search_result = context.get("web_search", "")
+    # Thu thập dữ liệu từ các bước trước đó trong Plan
+    web_data = context.get("web_search", "")
+    rag_data = context.get("rag_result", "")
     original_question = context.get("original_question", user_input)
 
-    context_info = f"Kết quả tìm kiếm:\n{search_result}" if search_result else ""
+    # Tạo một Context tổng hợp cực mạnh cho Gemini
+    combined_context = f"""
+    DỮ LIỆU TỪ TÀI LIỆU NỘI BỘ (RAG):
+    {rag_data}
+    
+    DỮ LIỆU TỪ INTERNET (WEB):
+    {web_data}
+    """
 
     final_answer = ask_gemini_to_reason(
         question=original_question,
-        context_info=context_info,
-        history=state.CONVERSATION_HISTORY,  # ← TRUYỀN HISTORY
-        temperature=0.3,
+        context_info=combined_context,
+        history=state.CONVERSATION_HISTORY,
     )
-
     return final_answer
+
 
 def tool_calculator(expression: str):
     """Thực thi tính toán số học."""

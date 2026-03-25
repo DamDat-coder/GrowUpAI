@@ -1,11 +1,10 @@
 import os
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 
-CHROMA_PATH = os.getenv("CHROMA_PATH", "chroma")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "local-rag")
+CHROMA_PATH = os.getenv("CHROMA_PATH", "chroma_db")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "growup-ai-docs")
 TEXT_EMBEDDING_MODEL = os.getenv("TEXT_EMBEDDING_MODEL", "nomic-embed-text")
-
 
 def get_vector_db():
     embedding = OllamaEmbeddings(model=TEXT_EMBEDDING_MODEL)
