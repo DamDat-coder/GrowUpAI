@@ -19,15 +19,11 @@ def plan(problem: dict) -> dict:
         ]
 
     # 3. Tìm kiếm thông tin (Web Search)
-    elif goal == "information_seeking" or goal == "learning_explanation":
-        if needs_knowledge:
-            steps = [
-                {"action": "rewrite_search_query", "input": problem["text"]},
-                {"action": "web_search"},
-                {"action": "ask_llm"},
-            ]
-        else:
-            steps = [{"action": "ask_llm", "input": user_text}]
+    elif goal == "learning_explanation" or goal == "information_seeking":
+        steps = [
+            {"action": "rag_search", "input": user_text},  # Lấy data từ PDF
+            {"action": "ask_llm"},  # Gemini tổng hợp kết quả từ RAG
+        ]
 
     # 4. Trò chuyện phím
     elif goal == "general_chat":

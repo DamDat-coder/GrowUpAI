@@ -1,45 +1,39 @@
 # state.py
-
 import json
 import os
-import torch
 import pandas as pd
 from sentence_transformers import SentenceTransformer
+import torch
 
-# State về Model và Data
-CURRENT_DF = None  # DataFrame đang làm việc
-CURRENT_MODEL = None  # Model ML đã được huấn luyện/tải
-CURRENT_FILE_NAME = None  # Tên file đang làm việc
-MODEL_DIR = "./models"
-
+# --- Quản lý Context & History ---
 CONVERSATION_HISTORY = []
-os.makedirs(MODEL_DIR, exist_ok=True)
+CURRENT_FILE_NAME = None
+CURRENT_DF = None  # Dành cho xử lý CSV/Excel nếu cần
 
-# State về Cấu hình và NLP
+# --- NLP & Intent Mapping ---
+# Load model SBERT một lần duy nhất để dùng chung
 SBERT_MODEL = SentenceTransformer("keepitreal/vietnamese-sbert")
 
-# Tải cấu hình ánh xạ cột
-with open("./train/column_mapping.json", "r", encoding="utf-8") as f:
-    COLUMN_MAP = json.load(f)
-
-# Tải các câu hỏi gợi ý
-with open("./train/prompts_model_actions.txt", "r", encoding="utf-8") as f:
-    ASK_MODEL_ACTION = [line.strip() for line in f if line.strip()]
-
-# Dữ liệu cho Intent Classification (task_identification.csv)
+# Load dữ liệu nhận diện Task (Intent)
 TASK_DF = pd.read_csv("./train/task_identification.csv")
-
 TARGET_TASK_IDENTIFICATION = TASK_DF["label"]
+# Pre-compute embeddings để search SBERT cho nhanh
 EMBEDDINGS_TASK = SBERT_MODEL.encode(
     TASK_DF["text"].tolist(), convert_to_tensor=True, normalize_embeddings=True
 )
 
-# Dữ liệu cho Action Classification (actions_with_file.csv)
-action_with_file = pd.read_csv("./train/actions_with_file.csv")
-TARGET_ACTION_WITH_FILE = action_with_file["label"]
-EMBEDDINGS_ACTION = SBERT_MODEL.encode(
-    action_with_file["text"], convert_to_tensor=True, normalize_embeddings=True
-)
+
+# Các config khác
+MODEL_DIR = "./models"
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+with open("./train/column_mapping.json", "r", encoding="utf-8") as f:
+    COLUMN_MAP = json.load(f)
+
+
+def clear_history():
+    global CONVERSATION_HISTORY
+    CONVERSATION_HISTORY = []
 
 
 def add_new_task_example(text: str, label: str) -> bool:

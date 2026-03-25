@@ -1,13 +1,10 @@
 # main.py
-# GrowUp AI – Thinking-first version
-
 import warnings
 import sys
 import io
 import state
 
 from tasks.calculator import Calculator
-from tasks.data_handler import DataHandler
 from core.executor import Executor
 from core.tools import (
     tool_web_search,
@@ -17,77 +14,59 @@ from core.tools import (
 )
 from core.understand import understand
 from core.planner import plan
+from core.engine import get_rag_context # Sử dụng hàm retrieval mới
 
-# =====================
-# IO & Warning config
-# =====================
+# Config IO
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# =====================
-# Init components
-# =====================
-calculator = Calculator()
-data_handler = DataHandler()
-# =====================
-# Init components
-# =====================
+# --- Khởi tạo Tools ---
+def tool_rag_search(user_question, context):
+    """Tìm trong database PDF và trả về context."""
+    print(f"\n[RAG] Đang lục tìm tài liệu nội bộ...")
+    context_data = get_rag_context(user_question)
+    context["rag_result"] = context_data # Lưu vào context chung
+    return context_data
+
 tools_registry = {
     "web_search": tool_web_search,
     "ask_llm": tool_llm_reasoning,
     "compute": tool_calculator,
     "rewrite_search_query": tool_rewrite_search_query,
-    "ask_user_clarify": lambda x: "Yêu cầu người dùng cung cấp thêm thông tin.",
+    "rag_search": tool_rag_search, # Tích hợp sâu RAG
+    "ask_user_clarify": lambda x, ctx: "Vui lòng cung cấp thêm thông tin.",
 }
+
 executor = Executor(tools=tools_registry)
 
-print("Gõ 'exit' hoặc 'quit' để thoát.")
+print("--- GrowUp AI: Ready ---")
 
 while True:
-    print("-------------------------------------------------------")
-    user_text = input("Xin chào, bạn cần giúp gì hôm nay: ").strip()
+    user_text = input("\nBạn cần giúp gì: ").strip()
+    if user_text.lower() in ("exit", "quit"): break
+    if not user_text: continue
 
-    if user_text.lower() in ("exit", "quit"):
-        print("Tạm biệt!")
-        break
-
-    if not user_text:
-        continue
-
-    if user_text.lower() in ["đóng file", "thoát file", "dừng làm việc với file"]:
-        data_handler.close_file()
-        continue
-
+    # 1. Hiểu ý định (Understand)
     problem = understand(user_text, state)
-    if not problem:
-        print("\nLỗi: Không thể giải mã ý định.")
-        continue
-
-    print(
-        f"\n[AI UNDERSTAND] Goal: {problem['goal']} | Needs Search: {problem['requires_external_knowledge']}"
-    )
-
+    
+    # 2. Lập kế hoạch (Plan)
     execution_plan = plan(problem)
+    execution_plan["original_question"] = user_text
 
-    execution_plan["original_question"] = problem["text"]
-
+    # 3. Thực thi (Execute)
     result_context = executor.run(execution_plan)
 
-    print("\n[AI CONTEXT]")
-    for action_name, output in result_context.items():
-        print(f"[{action_name.upper()}]: {output}")
+    # 4. Lấy câu trả lời cuối cùng (Thường là từ ask_llm)
+    final_answer = result_context.get("ask_llm") or result_context.get("compute")
 
-    if action_name == "ask_llm":  # hoặc action cuối cùng
-        final_answer = output
-
-    # === LƯU HISTORY ===
-    state.CONVERSATION_HISTORY.append({"role": "user", "content": user_text})
     if final_answer:
-        state.CONVERSATION_HISTORY.append(
-            {"role": "assistant", "content": final_answer}
-        )
+        print(f"\n[AI]: {final_answer}")
+        
+        # Lưu History
+        state.CONVERSATION_HISTORY.append({"role": "user", "content": user_text})
+        state.CONVERSATION_HISTORY.append({"role": "assistant", "content": str(final_answer)})
 
-    # Giới hạn history (giữ nhẹ cho Gemini)
+    # Giới hạn History
     if len(state.CONVERSATION_HISTORY) > 20:
         state.CONVERSATION_HISTORY = state.CONVERSATION_HISTORY[-20:]
