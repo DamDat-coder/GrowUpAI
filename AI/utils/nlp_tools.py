@@ -11,7 +11,6 @@ from state import (
 
 # ... (Hàm predict_intent) ...
 def predict_intent(user_text):
-    """Phân loại intent chính (calculation, handle_file)."""
     user_emb = SBERT_MODEL.encode(
         user_text, convert_to_tensor=True, normalize_embeddings=True
     )
@@ -19,8 +18,10 @@ def predict_intent(user_text):
     cosine_scores = util.cos_sim(user_emb, EMBEDDINGS_TASK)[0]
     best_idx = torch.argmax(cosine_scores).item()
     best_label = TARGET_TASK_IDENTIFICATION[best_idx]
+    print("best_label: ", best_label)
     best_score = cosine_scores[best_idx].item()
     return best_label, best_score
+
 
 def map_text_to_column(user_text):
     """Ánh xạ văn bản người dùng thành tên cột."""

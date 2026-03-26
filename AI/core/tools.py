@@ -1,18 +1,43 @@
 # core/tools.py
+import os
+import re
+
 from core.engine import get_rag_context
 from duckduckgo_search import DDGS
+from core.ingester import embed
 from utils.gemini_teacher import ask_gemini_to_reason
-import state  # Giả sử bạn dùng file state để lưu ngữ cảnh
+import state
 
 
-def tool_web_search(user_input: str, context: dict):
-    print(f"    [Tool] Đang tìm kiếm: {user_input}...")
-    try:
-        with DDGS() as ddgs:
-            results = [r for r in ddgs.text(user_input, max_results=3)]
-            return "\n".join([f"- {r['body']}" for r in results])
-    except Exception as e:
-        return f"Lỗi tìm kiếm: {e}"
+class LocalFile:  # Lớp giả lập để khớp với hàm embed của bạn
+    def __init__(self, path):
+        self.filename = os.path.basename(path)
+        self.path = path
+
+    def save(self, dest):
+        import shutil
+
+        shutil.copy(self.path, dest)
+
+
+def tool_ingest_file(user_input: str, context: dict):
+    print(f"    [Tool] Đang xử lý yêu cầu nạp tài liệu...")
+
+    match = re.search(r"([\w\d\-\.]+\.pdf)", user_input)
+
+    if not match:
+        return "Tôi không tìm thấy tên file .pdf nào trong yêu cầu của bạn."
+
+    file_name = match.group(1)
+    # Tự động nối đường dẫn vào folder data
+    full_path = os.path.join(state.DATA_FOLDER, file_name)
+    
+    if os.path.exists(full_path):
+        print(full_path)
+        success = embed(full_path, is_path=True)
+        return f"Đã học xong file '{file_name}' trong thư mục dữ liệu."
+    else:
+        return f"Không tìm thấy file '{file_name}' trong thư mục {state.DATA_FOLDER}. Bạn đã copy file vào đó chưa?"
 
 
 def tool_rag_search(user_input: str, context: dict):

@@ -5,6 +5,9 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import torch
 
+# --- Quản lý folder Data ---
+DATA_FOLDER = "./data"
+
 # --- Quản lý Context & History ---
 CONVERSATION_HISTORY = []
 CURRENT_FILE_NAME = None
@@ -35,6 +38,18 @@ def clear_history():
     global CONVERSATION_HISTORY
     CONVERSATION_HISTORY = []
 
+def reload_intent_model():
+    """Nạp lại CSV và tính lại Embeddings khi có thay đổi."""
+    global TASK_DF, TARGET_TASK_IDENTIFICATION, EMBEDDINGS_TASK
+    print("[SYSTEM] Đang cập nhật bộ nhớ Intent...")
+    TASK_DF = pd.read_csv("./train/task_identification.csv")
+    TARGET_TASK_IDENTIFICATION = TASK_DF["label"]
+    EMBEDDINGS_TASK = SBERT_MODEL.encode(
+        TASK_DF["text"].tolist(), 
+        convert_to_tensor=True, 
+        normalize_embeddings=True
+    )
+    print(f"[SYSTEM] Đã cập nhật xong! Tổng số mẫu: {len(TASK_DF)}")
 
 def add_new_task_example(text: str, label: str) -> bool:
     """
