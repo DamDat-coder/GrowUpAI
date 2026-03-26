@@ -8,6 +8,13 @@ def plan(problem: dict) -> dict:
 
     steps = []
 
+    # Nạp file
+    if goal == "upload_document":
+        steps = [
+            {"action": "ingest_file", "input": user_text}
+        ]
+        return {"goal": goal, "steps": steps, "status": "planned"}
+
     # 1. Giải toán
     if goal == "solve_numeric_problem":
         steps = [{"action": "compute", "input": user_text}]
@@ -18,7 +25,6 @@ def plan(problem: dict) -> dict:
             {"action": "ask_llm", "input": f"Hướng dẫn cách xử lý file: {user_text}"}
         ]
 
-    # 3. Tìm kiếm thông tin (Web Search)
     elif goal == "learning_explanation" or goal == "information_seeking":
         steps = [
             {"action": "rag_search", "input": user_text},  # Lấy data từ PDF

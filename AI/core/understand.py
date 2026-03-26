@@ -1,4 +1,6 @@
 # core/understand.py
+import re
+
 from core.goals import AVAILABLE_GOALS
 from utils.nlp_tools import predict_intent
 from utils.gemini_teacher import ask_gemini_to_understand
@@ -14,16 +16,22 @@ def understand(user_text: str, state) -> dict:
         print("[DEBUG] Hit understand cache")
         return UNDERSTAND_CACHE[user_text].copy()
 
-    intent, intent_conf = predict_intent(user_text)   # intent giờ chính là GOAL
+    intent, intent_conf = predict_intent(user_text)  # intent giờ chính là GOAL
 
-    # === SHORT-CIRCUIT (không còn INTENT_TO_GOAL nữa) ===
-    if intent_conf >= 0.75:
+    if ".pdf" in user_text.lower() or "đọc file" in user_text.lower():
+        return {
+            "goal": "upload_document",
+            "text": user_text,
+            "requires_external_knowledge": False,
+        }
+    elif intent_conf >= 0.75:
         result = {
             "text": user_text,
             "intent_signal": intent,
             "confidence": intent_conf,
-            "goal": intent,                                      # ← trực tiếp dùng label từ CSV
-            "requires_external_knowledge": intent in ("information_seeking", "learning_explanation"),
+            "goal": intent,
+            "requires_external_knowledge": intent
+            in ("information_seeking", "learning_explanation"),
             "debug": {"source": "intent_short_circuit"},
         }
         UNDERSTAND_CACHE[user_text] = result
@@ -51,7 +59,7 @@ def understand(user_text: str, state) -> dict:
     # === TỰ HỌC: Lưu vào dataset để lần sau SBERT biết luôn ===
     if (
         result.get("debug", {}).get("source") == "gemini_reasoning"
-        and result.get("confidence", 0) >= 0.65          # chỉ lưu khi Gemini khá chắc
+        and result.get("confidence", 0) >= 0.65  # chỉ lưu khi Gemini khá chắc
         and result["goal"] != "unknown"
         and result["goal"] in AVAILABLE_GOALS
     ):
