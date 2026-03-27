@@ -2,7 +2,16 @@ text,label
 Bạn hãy cho tôi số liệu về số lượng người hút thuốc tại Việt Nam trong 6 tháng gần đây (tính từ năm 2025),information_seeking
 Giá BTC hiện tại là bao nhiêu và BTC sẽ có xu hướng gì trong tương lai,information_seeking
 bạn có thể làm gì với file pdf DamQuocDat-WebProgaming-CV.docx.pdf,information_seeking
-"hãy đọc file này",upload_document
-"nạp tài liệu CV của tôi",upload_document
-"learn this pdf file",upload_document
-"đưa thông tin từ file vào bộ nhớ",upload_document
+hãy đọc file này,upload_document
+nạp tài liệu CV của tôi,upload_document
+learn this pdf file,upload_document
+đưa thông tin từ file vào bộ nhớ,upload_document
+bạn có thông tin gì thông qua file đó,information_seeking
+"Dựa trên portfolio đó thì bạn có thể đưa ra các câu hỏi hổng vấn có thể xoáy sâu vào các dự án có được không, nếu cần thì bạn có thể thông qua các link github này https://github.com/DamDat-coder/DuAnTotNghiep.git và https://github.com/DamDat-coder/ChatBoxRasa.git",information_seeking
+"cho tôi hỏi alf bạn có khả năng giải các bài toán cơ bản, hay có khả năng trò chuyện phím với người dùng không",information_seeking
+text,label
+"tóm tắt nội dung file này",document_deep_analysis
+"hãy phân tích kỹ năng của ứng viên trong CV",document_deep_analysis
+"so sánh kinh nghiệm Web và AI trong tài liệu",document_deep_analysis
+"đánh giá điểm mạnh và điểm yếu từ file đã nạp",document_deep_analysis
+"trình bày chi tiết lộ trình học tập của Đạt",document_deep_analysis

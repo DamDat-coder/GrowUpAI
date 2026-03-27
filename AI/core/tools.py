@@ -31,7 +31,7 @@ def tool_ingest_file(user_input: str, context: dict):
     file_name = match.group(1)
     # Tự động nối đường dẫn vào folder data
     full_path = os.path.join(state.DATA_FOLDER, file_name)
-    
+
     if os.path.exists(full_path):
         print(full_path)
         success = embed(full_path, is_path=True)
@@ -43,7 +43,11 @@ def tool_ingest_file(user_input: str, context: dict):
 def tool_rag_search(user_input: str, context: dict):
     """Tìm kiếm kiến thức nội bộ từ tài liệu đã upload."""
     print(f"    [Tool] Đang truy vấn tài liệu nội bộ cho: {user_input}...")
-    rag_data = get_rag_context(user_input)
+
+    is_deep = "phân tích" in user_input.lower() or "tóm tắt" in user_input.lower()
+    k_value = 10 if is_deep else 4
+
+    rag_data = get_rag_context(user_input, k=k_value)
     # Lưu vào context để step sau (ask_llm) có thể lấy dùng
     context["rag_result"] = rag_data
     return rag_data
