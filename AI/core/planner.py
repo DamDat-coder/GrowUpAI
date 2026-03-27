@@ -4,7 +4,6 @@
 def plan(problem: dict) -> dict:
     goal = problem["goal"]
     user_text = problem.get("text", "")
-    # Biến này để biết câu hỏi có cần dữ liệu mới nhất không
     requires_web = problem.get("requires_external_knowledge", False)
 
     steps = []
@@ -38,12 +37,22 @@ def plan(problem: dict) -> dict:
     elif goal == "general_chat":
         steps = [{"action": "ask_llm", "input": user_text}]
 
-    # Plan B: Phân tích sâu tài liệu
+    # Plan A: DUYỆT WEB THÔNG MINH
+    if goal == "web_search_required":
+        steps = [
+            {"action": "rewrite_search_query", "input": user_text},
+            {"action": "web_search"},
+            {
+                "action": "ask_llm",
+                "input": "Hãy tổng hợp thông tin mới nhất từ kết quả tìm kiếm và trả lời ngắn gọn, chính xác.",
+            },
+        ]
+        return {"goal": goal, "steps": steps, "status": "planned"}
+
+    # Plan B: PHÂN TÍCH SÂU TÀI LIỆU
     if goal == "document_deep_analysis":
         steps = [
-            # Bước 1: Lấy nhiều context hơn bình thường (Deep Retrieval)
             {"action": "rag_search", "input": f"Phân tích chuyên sâu về: {user_text}"},
-            # Bước 2: Dùng Gemini để suy luận và tổng hợp báo cáo
             {
                 "action": "ask_llm",
                 "input": "Hãy đóng vai một chuyên gia phân tích dữ liệu, đọc kỹ nội dung và trả lời chi tiết.",

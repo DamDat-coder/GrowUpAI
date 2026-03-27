@@ -9,9 +9,13 @@ learn this pdf file,upload_document
 bạn có thông tin gì thông qua file đó,information_seeking
 "Dựa trên portfolio đó thì bạn có thể đưa ra các câu hỏi hổng vấn có thể xoáy sâu vào các dự án có được không, nếu cần thì bạn có thể thông qua các link github này https://github.com/DamDat-coder/DuAnTotNghiep.git và https://github.com/DamDat-coder/ChatBoxRasa.git",information_seeking
 "cho tôi hỏi alf bạn có khả năng giải các bài toán cơ bản, hay có khả năng trò chuyện phím với người dùng không",information_seeking
-text,label
 "tóm tắt nội dung file này",document_deep_analysis
 "hãy phân tích kỹ năng của ứng viên trong CV",document_deep_analysis
 "so sánh kinh nghiệm Web và AI trong tài liệu",document_deep_analysis
 "đánh giá điểm mạnh và điểm yếu từ file đã nạp",document_deep_analysis
 "trình bày chi tiết lộ trình học tập của Đạt",document_deep_analysis
+"giá vàng hôm nay bao nhiêu",web_search_required
+"tin tức mới nhất về trí tuệ nhân tạo 2026",web_search_required
+"thời tiết tại Đồng Nai hiện tại thế nào",web_search_required
+"cập nhật tình hình thị trường chứng khoán",web_search_required
+"ai là người thắng giải Nobel năm nay",web_search_required

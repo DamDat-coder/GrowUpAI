@@ -11,10 +11,9 @@ DATA_FOLDER = "./data"
 # --- Quản lý Context & History ---
 CONVERSATION_HISTORY = []
 CURRENT_FILE_NAME = None
-CURRENT_DF = None  # Dành cho xử lý CSV/Excel nếu cần
+CURRENT_DF = None
 
 # --- NLP & Intent Mapping ---
-# Load model SBERT một lần duy nhất để dùng chung
 SBERT_MODEL = SentenceTransformer("keepitreal/vietnamese-sbert")
 
 # Load dữ liệu nhận diện Task (Intent)
@@ -26,7 +25,6 @@ EMBEDDINGS_TASK = SBERT_MODEL.encode(
 )
 
 
-# Các config khác
 MODEL_DIR = "./models"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -38,6 +36,7 @@ def clear_history():
     global CONVERSATION_HISTORY
     CONVERSATION_HISTORY = []
 
+
 def reload_intent_model():
     """Nạp lại CSV và tính lại Embeddings khi có thay đổi."""
     global TASK_DF, TARGET_TASK_IDENTIFICATION, EMBEDDINGS_TASK
@@ -45,11 +44,10 @@ def reload_intent_model():
     TASK_DF = pd.read_csv("./train/task_identification.csv")
     TARGET_TASK_IDENTIFICATION = TASK_DF["label"]
     EMBEDDINGS_TASK = SBERT_MODEL.encode(
-        TASK_DF["text"].tolist(), 
-        convert_to_tensor=True, 
-        normalize_embeddings=True
+        TASK_DF["text"].tolist(), convert_to_tensor=True, normalize_embeddings=True
     )
     print(f"[SYSTEM] Đã cập nhật xong! Tổng số mẫu: {len(TASK_DF)}")
+
 
 def add_new_task_example(text: str, label: str) -> bool:
     """
