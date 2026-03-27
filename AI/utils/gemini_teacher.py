@@ -11,6 +11,7 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
 
+
 def fallback_understand(user_text):
     return {
         "goal": "information_seeking",
@@ -29,7 +30,6 @@ def ask_gemini_to_understand(
     if not client:
         return fallback_understand(user_text)
 
-    # Xây dựng lịch sử cho prompt
     history_text = ""
     if history:
         history_text = "\n".join(
@@ -93,10 +93,8 @@ def ask_gemini_to_reason(
     if not client:
         return "[Lỗi] Không kết nối được Gemini."
 
-    # --- BƯỚC MỚI: TỰ ĐỘNG LẤY DỮ LIỆU TỪ RAG NẾU CHƯA CÓ CONTEXT ---
     if not context_info:
         try:
-            # Lấy dữ liệu thô từ hệ thống RAG cục bộ (Llama 3.1 đã xử lý sơ bộ)
             context_info = local_rag_query(question)
             print(f"[RAG Context] Đã tìm thấy dữ liệu liên quan từ tài liệu nội bộ.")
         except Exception as e:
@@ -112,7 +110,6 @@ def ask_gemini_to_reason(
             ]
         )
 
-    # Prompt nâng cấp để yêu cầu Gemini làm "Trọng tài" xử lý dữ liệu từ RAG
     prompt = f"""
 Bạn là một trợ lý AI thông minh. Nhiệm vụ của bạn là trả lời câu hỏi dựa trên Lịch sử và Thông tin tham khảo dưới đây.
 
@@ -133,7 +130,7 @@ Yêu cầu:
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",  # Hoặc gemini-2.0-flash-exp nếu bạn muốn tốc độ cao hơn
+            model="gemini-2.5-flash-lite",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=temperature,

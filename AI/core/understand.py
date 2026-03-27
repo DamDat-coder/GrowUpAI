@@ -6,17 +6,15 @@ from utils.nlp_tools import predict_intent
 from utils.gemini_teacher import ask_gemini_to_understand
 from state import add_new_task_example
 
-# Cache để tránh gọi Gemini lặp lại cùng câu
 UNDERSTAND_CACHE = {}
 
 
 def understand(user_text: str, state) -> dict:
-    # === CACHE ===
     if user_text in UNDERSTAND_CACHE:
         print("[DEBUG] Hit understand cache")
         return UNDERSTAND_CACHE[user_text].copy()
 
-    intent, intent_conf = predict_intent(user_text)  # intent giờ chính là GOAL
+    intent, intent_conf = predict_intent(user_text)
 
     if ".pdf" in user_text.lower() or "đọc file" in user_text.lower():
         return {
@@ -37,7 +35,6 @@ def understand(user_text: str, state) -> dict:
         UNDERSTAND_CACHE[user_text] = result
         return result
 
-    # === GỌI GEMINI (fallback) ===
     gemini_result = ask_gemini_to_understand(
         user_text=user_text,
         available_goals=AVAILABLE_GOALS,
@@ -56,10 +53,9 @@ def understand(user_text: str, state) -> dict:
     if "debug" not in result:
         result["debug"] = {"source": "gemini_reasoning"}
 
-    # === TỰ HỌC: Lưu vào dataset để lần sau SBERT biết luôn ===
     if (
         result.get("debug", {}).get("source") == "gemini_reasoning"
-        and result.get("confidence", 0) >= 0.65  # chỉ lưu khi Gemini khá chắc
+        and result.get("confidence", 0) >= 0.65
         and result["goal"] != "unknown"
         and result["goal"] in AVAILABLE_GOALS
     ):

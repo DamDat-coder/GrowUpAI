@@ -9,12 +9,10 @@ from state import (
 )
 
 
-# ... (Hàm predict_intent) ...
 def predict_intent(user_text):
     user_emb = SBERT_MODEL.encode(
         user_text, convert_to_tensor=True, normalize_embeddings=True
     )
-    # util.cos_sim được sử dụng
     cosine_scores = util.cos_sim(user_emb, EMBEDDINGS_TASK)[0]
     best_idx = torch.argmax(cosine_scores).item()
     best_label = TARGET_TASK_IDENTIFICATION[best_idx]
@@ -24,7 +22,6 @@ def predict_intent(user_text):
 
 
 def map_text_to_column(user_text):
-    """Ánh xạ văn bản người dùng thành tên cột."""
     user_text = user_text.lower()
     matched = {}
 

@@ -6,10 +6,6 @@ load_dotenv()
 
 
 def get_rag_context(user_query: str, k) -> str:
-    """
-    Hàm này chỉ làm nhiệm vụ: Tìm trong ChromaDB những đoạn text
-    liên quan nhất đến câu hỏi và trả về chuỗi văn bản gộp.
-    """
     print("Đã sử dụng hàm get_rag_context")
     try:
         db = get_vector_db()

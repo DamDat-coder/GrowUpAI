@@ -10,19 +10,15 @@ TEMP_FOLDER = os.getenv("TEMP_FOLDER", "./_temp")
 # core/ingester.py
 def embed(file_obj, is_path=False):
     try:
-        # KIỂM TRA ĐƯỜNG DẪN FILE
         if is_path:
-            # Nếu là đường dẫn, file_path chính là file_obj (kiểu string)
             file_path = file_obj
         else:
-            # Nếu là object file từ Web, mới dùng .filename
             if not os.path.exists(TEMP_FOLDER):
                 os.makedirs(TEMP_FOLDER)
             filename = secure_filename(file_obj.filename)
             file_path = os.path.join(TEMP_FOLDER, filename)
             file_obj.save(file_path)
 
-        # Kiểm tra thực tế file có tồn tại trên ổ cứng không
         if not os.path.exists(file_path):
             print(f"Lỗi: Không tìm thấy file tại {file_path}")
             return False
@@ -43,5 +39,5 @@ def embed(file_obj, is_path=False):
         return True
 
     except Exception as e:
-        print(f"Lỗi Embedding: {e}")  # Đây là dòng in ra lỗi 'str' của bạn
+        print(f"Lỗi Embedding: {e}")
         return False

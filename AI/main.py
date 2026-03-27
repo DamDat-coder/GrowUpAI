@@ -12,6 +12,7 @@ from core.tools import (
     tool_calculator,
     tool_rewrite_search_query,
     tool_ingest_file,
+    tool_web_search,
 )
 from core.understand import understand
 from core.planner import plan
@@ -23,6 +24,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 tools_registry = {
+    "web_search": tool_web_search,
     "ask_llm": tool_llm_reasoning,
     "compute": tool_calculator,
     "rewrite_search_query": tool_rewrite_search_query,
