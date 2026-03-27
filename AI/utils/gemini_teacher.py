@@ -88,7 +88,7 @@ def ask_gemini_to_reason(
     context_info: str = "",
     history: list = None,
     temperature: float = 0.3,
-    max_tokens: int = 1000,
+    max_tokens: int = 2000,
 ) -> str:
     if not client:
         return "[Lỗi] Không kết nối được Gemini."
@@ -109,7 +109,12 @@ def ask_gemini_to_reason(
                 for m in history[-6:]
             ]
         )
-
+    system_instruction = (
+        "Bạn là GrowUp AI - Trợ lý đa năng chuyên nghiệp.\n"
+        "1. Nếu trả lời về lập trình (Coding): Sử dụng Markdown chuẩn, giải thích rõ ràng.\n"
+        "2. Nếu là phân tích tài liệu (Analysis): Trình bày có cấu trúc, luận điểm rõ ràng.\n"
+        "3. Ngôn ngữ: Tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp."
+    )
     prompt = f"""
 Bạn là một trợ lý AI thông minh. Nhiệm vụ của bạn là trả lời câu hỏi dựa trên Lịch sử và Thông tin tham khảo dưới đây.
 
@@ -135,6 +140,7 @@ Yêu cầu:
             config=types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                system_instruction=system_instruction
             ),
         )
         return response.text.strip()

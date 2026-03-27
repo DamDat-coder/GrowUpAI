@@ -60,6 +60,16 @@ def plan(problem: dict) -> dict:
         ]
         return {"goal": goal, "steps": steps, "status": "planned"}
 
+    # Plan C: Trợ lý Lập trình
+    if goal == "coding_task":
+        steps = [
+            {
+                "action": "ask_llm", 
+                "input": "Bạn là một chuyên gia lập trình Senior. Hãy viết code tối ưu, sạch sẽ và giải thích từng bước. Sử dụng Markdown code blocks."
+            }
+        ]
+        return {"goal": goal, "steps": steps, "status": "planned"}
+
     # --- MẶC ĐỊNH ---
     else:
         steps = [{"action": "ask_llm", "input": user_text}]
