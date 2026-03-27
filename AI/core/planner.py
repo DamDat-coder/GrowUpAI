@@ -3,45 +3,56 @@
 
 def plan(problem: dict) -> dict:
     goal = problem["goal"]
-    needs_knowledge = problem["requires_external_knowledge"]
     user_text = problem.get("text", "")
+    # Biến này để biết câu hỏi có cần dữ liệu mới nhất không
+    requires_web = problem.get("requires_external_knowledge", False)
 
     steps = []
 
-    # Nạp file
+    # --- NHÓM 1: QUẢN LÝ DỮ LIỆU ---
     if goal == "upload_document":
-        steps = [
-            {"action": "ingest_file", "input": user_text}
-        ]
-        return {"goal": goal, "steps": steps, "status": "planned"}
+        steps = [{"action": "ingest_file", "input": user_text}]
 
-    # 1. Giải toán
-    if goal == "solve_numeric_problem":
+    # --- NHÓM 2: TRUY VẤN KIẾN THỨC (RAG + WEB) ---
+    elif goal in ["information_seeking", "learning_explanation"]:
+        # Nếu cần kiến thức bên ngoài (thời sự, giá cả...) -> Ưu tiên Web
+        if requires_web:
+            steps = [
+                {"action": "rewrite_search_query", "input": user_text},
+                {"action": "web_search"},
+                {"action": "rag_search"},  # Vẫn tìm trong PDF nếu có
+                {"action": "ask_llm"},
+            ]
+        else:
+            # Chỉ tìm trong tài liệu nội bộ (PDF)
+            steps = [
+                {"action": "rag_search", "input": user_text},
+                {"action": "ask_llm"},
+            ]
+
+    # --- NHÓM 3: CÔNG CỤ CHÍNH XÁC (Toán học) ---
+    elif goal == "solve_numeric_problem":
         steps = [{"action": "compute", "input": user_text}]
 
-    # 2. Phân tích dữ liệu
-    elif goal == "analyze_data":
-        steps = [
-            {"action": "ask_llm", "input": f"Hướng dẫn cách xử lý file: {user_text}"}
-        ]
-
-    elif goal == "learning_explanation" or goal == "information_seeking":
-        steps = [
-            {"action": "rag_search", "input": user_text},  # Lấy data từ PDF
-            {"action": "ask_llm"},  # Gemini tổng hợp kết quả từ RAG
-        ]
-
-    # 4. Trò chuyện phím
+    # --- NHÓM 4: CHAT TỰ NHIÊN ---
     elif goal == "general_chat":
         steps = [{"action": "ask_llm", "input": user_text}]
 
-    # 5. Mặc định nếu không hiểu
-    else:
+    # Plan B: Phân tích sâu tài liệu
+    if goal == "document_deep_analysis":
         steps = [
+            # Bước 1: Lấy nhiều context hơn bình thường (Deep Retrieval)
+            {"action": "rag_search", "input": f"Phân tích chuyên sâu về: {user_text}"},
+            # Bước 2: Dùng Gemini để suy luận và tổng hợp báo cáo
             {
-                "action": "ask_user_clarify",
-                "input": "Tôi chưa rõ ý bạn, bạn có thể nói chi tiết hơn không?",
-            }
+                "action": "ask_llm",
+                "input": "Hãy đóng vai một chuyên gia phân tích dữ liệu, đọc kỹ nội dung và trả lời chi tiết.",
+            },
         ]
+        return {"goal": goal, "steps": steps, "status": "planned"}
+
+    # --- MẶC ĐỊNH ---
+    else:
+        steps = [{"action": "ask_llm", "input": user_text}]
 
     return {"goal": goal, "steps": steps, "status": "planned"}
