@@ -5,17 +5,18 @@ from core.database import get_vector_db
 load_dotenv()
 
 
-def get_rag_context(user_query: str, k) -> str:
-    print("Đã sử dụng hàm get_rag_context")
+def get_rag_context(user_query: str, k: int = 4):
     try:
         db = get_vector_db()
-        docs = db.similarity_search(user_query, k=k)
-        if not docs:
-            return "Không tìm thấy tài liệu liên quan trong DB."
+        # Lấy kèm điểm số để kiểm tra độ liên quan thực tế
+        docs_and_scores = db.similarity_search_with_score(user_query, k=k)
 
-        # Gộp các nội dung lại
-        context = "\n---\n".join([doc.page_content for doc in docs])
+        relevant_docs = [doc for doc, score in docs_and_scores if score < 0.6]
+        if not relevant_docs:
+            return "DỮ LIỆU TRỐNG"
+
+        context = "\n---\n".join([doc.page_content for doc in relevant_docs])
         return context
     except Exception as e:
-        print(f"[RAG Engine Error]: {e}")
-        return ""
+        print(f"[RAG Error]: {e}")
+        return "DỮ LIỆU TRỐNG"

@@ -8,6 +8,17 @@ from core.ingester import embed
 from utils.gemini_teacher import ask_gemini_to_reason
 import state
 
+GLOBAL_TOOLS_REGISTRY = {}
+
+
+# 2. Định nghĩa Decorator
+def register_tool(name):
+    def decorator(func):
+        GLOBAL_TOOLS_REGISTRY[name] = func
+        return func
+
+    return decorator
+
 
 class LocalFile:
     def __init__(self, path):
@@ -20,6 +31,7 @@ class LocalFile:
         shutil.copy(self.path, dest)
 
 
+@register_tool("ingest_file")
 def tool_ingest_file(user_input: str, context: dict):
     print(f"    [Tool] Đang xử lý yêu cầu nạp tài liệu...")
 
@@ -39,6 +51,7 @@ def tool_ingest_file(user_input: str, context: dict):
         return f"Không tìm thấy file '{file_name}' trong thư mục {state.DATA_FOLDER}. Bạn đã copy file vào đó chưa?"
 
 
+@register_tool("rag_search")
 def tool_rag_search(user_input: str, context: dict):
     print(f"    [Tool] Đang truy vấn tài liệu nội bộ cho: {user_input}...")
 
@@ -50,6 +63,7 @@ def tool_rag_search(user_input: str, context: dict):
     return rag_data
 
 
+@register_tool("web_search")
 def tool_web_search(user_input: str, context: dict):
     print(f"    [Tool] Đang tìm kiếm: {user_input}...")
     try:
@@ -60,6 +74,7 @@ def tool_web_search(user_input: str, context: dict):
         return f"Lỗi tìm kiếm: {e}"
 
 
+@register_tool("ask_llm")
 def tool_llm_reasoning(user_input: str, context: dict):
     print("    [Tool] Gemini đang suy luận tổng hợp...")
 
@@ -83,6 +98,7 @@ def tool_llm_reasoning(user_input: str, context: dict):
     return final_answer
 
 
+@register_tool("compute")
 def tool_calculator(expression: str):
     from tasks.calculator import Calculator
 
@@ -90,6 +106,7 @@ def tool_calculator(expression: str):
     return calc.calculate(expression)
 
 
+@register_tool("rewrite_search_query")
 def tool_rewrite_search_query(user_text: str, context: dict):
     print("    [Tool] Đang rewrite search query...")
 
@@ -122,3 +139,31 @@ def tool_rewrite_search_query(user_text: str, context: dict):
     context["search_query"] = query
 
     return query
+
+
+@register_tool("smart_intelligence")
+def tool_smart_intelligence(user_input: str, context: dict):
+    # 1. Thử hỏi bộ nhớ Local (RAG)
+    rag_data = get_rag_context(user_input)
+
+    if rag_data != "DỮ LIỆU TRỐNG":
+        print("    [Success] Trả lời từ bộ nhớ local.")
+        return ask_gemini_to_reason(user_input, context_info=rag_data)
+
+    # 2. Nếu local không biết -> Web Search
+    print("    [Fallback] Đang tìm kiếm trên Internet...")
+
+    # GỌI TRỰC TIẾP, KHÔNG CẦN IMPORT LẠI
+    query = tool_rewrite_search_query(user_input, context)
+    web_data = tool_web_search(query, context)
+
+    # 3. Gemini tổng hợp
+    final_answer = ask_gemini_to_reason(user_input, context_info=web_data)
+
+    # 4. Tự học (chỉ học cái xịn)
+    if final_answer and "không tìm thấy" not in final_answer.lower():
+        from core.ingester import learn_from_chat
+
+        learn_from_chat(user_input, final_answer)
+
+    return final_answer
