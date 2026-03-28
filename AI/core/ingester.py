@@ -1,6 +1,7 @@
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from core.database import get_vector_db
 from werkzeug.utils import secure_filename
 
@@ -40,4 +41,27 @@ def embed(file_obj, is_path=False):
 
     except Exception as e:
         print(f"Lỗi Embedding: {e}")
+        return False
+
+def learn_from_chat(question, answer):
+    negative_keywords = ["không tìm thấy", "không có thông tin", "không tìm thấy bất kỳ", "không thể cung cấp"]
+    
+    # Chỉ lưu nếu Gemini thực sự trả lời được cái gì đó hữu ích
+    if any(kw in answer.lower() for kw in negative_keywords):
+        print("[LEARNING] Bỏ qua không lưu vì câu trả lời không có nội dung hữu ích.")
+        return False
+    try:
+        db = get_vector_db()
+        # Tạo một 'Document' giả lập từ nội dung chat
+        content = f"Câu hỏi: {question}\nTrả lời: {answer}"
+        metadata = {"source": "gemini_learning", "type": "qa_pair"}
+        
+        doc = Document(page_content=content, metadata=metadata)
+        
+        # Đẩy vào ChromaDB
+        db.add_documents([doc])
+        print(f"[LEARNING] Đã lưu kiến thức mới vào bộ nhớ local.")
+        return True
+    except Exception as e:
+        print(f"[LEARNING ERROR] Không thể lưu kiến thức: {e}")
         return False
