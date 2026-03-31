@@ -5,15 +5,13 @@ import { aiService } from "./ai.service"; // nếu bạn gọi AI ở đây
 
 type Sender = "user" | "ai";
 
-export const addMessage = async (
-  params: {
-    conversationId?: string | null;
-    userId?: string | null;
-    sender: Sender;
-    message: string;
-    callAI?: boolean; // nếu true thì sẽ gọi aiService.generate và lưu reply
-  }
-) => {
+export const addMessage = async (params: {
+  conversationId?: string | null;
+  userId?: string | null;
+  sender: Sender;
+  message: string;
+  callAI?: boolean; // nếu true thì sẽ gọi aiService.generate và lưu reply
+}) => {
   const { conversationId, userId, sender, message, callAI = true } = params;
 
   let convId = conversationId ?? null;
@@ -65,7 +63,7 @@ export const addMessage = async (
   // Nếu là message từ user và cần gọi AI -> gọi aiService và lưu response
   if (sender === "user" && callAI) {
     try {
-      const reply = await aiService.generate(message); // mình giả sử aiService trả về string
+      const reply = await aiService.generate(userId || "anonymous", message);
       const assistantMsg = await ChatMessage.create({
         conversationId: convId,
         sender: "ai",
@@ -86,5 +84,7 @@ export const addMessage = async (
 };
 
 export const getMessages = async (conversationId: string) => {
-  return await ChatMessage.find({ conversationId }).sort({ createdAt: 1 }).lean();
+  return await ChatMessage.find({ conversationId })
+    .sort({ createdAt: 1 })
+    .lean();
 };

@@ -13,12 +13,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.aiService = void 0;
+// services/ai.service.ts
 const axios_1 = __importDefault(require("axios"));
 exports.aiService = {
-    generate: (input) => __awaiter(void 0, void 0, void 0, function* () {
-        const res = yield axios_1.default.post("http://localhost:8000/predict", {
-            prompt: input
-        });
-        return res.data.reply;
+    generate: (userId, input) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            // 1. Gọi đúng port 8000 và đúng endpoint /api/v1/chat
+            const res = yield axios_1.default.post("http://localhost:8000/api/v1/chat", {
+                user_id: userId, // Truyền userId để Python biết ai đang chat
+                message: input
+            });
+            // 2. FastAPI trả về object có key là 'response'
+            return res.data.response;
+        }
+        catch (error) {
+            console.error("Lỗi khi gọi sang FastAPI:", error);
+            throw new Error("AI Service hiện không khả dụng.");
+        }
     })
 };

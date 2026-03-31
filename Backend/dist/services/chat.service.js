@@ -59,7 +59,7 @@ const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
     // Nếu là message từ user và cần gọi AI -> gọi aiService và lưu response
     if (sender === "user" && callAI) {
         try {
-            const reply = yield ai_service_1.aiService.generate(message); // mình giả sử aiService trả về string
+            const reply = yield ai_service_1.aiService.generate(userId || "anonymous", message);
             const assistantMsg = yield chat_model_1.default.create({
                 conversationId: convId,
                 sender: "ai",
@@ -78,6 +78,8 @@ const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.addMessage = addMessage;
 const getMessages = (conversationId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield chat_model_1.default.find({ conversationId }).sort({ createdAt: 1 }).lean();
+    return yield chat_model_1.default.find({ conversationId })
+        .sort({ createdAt: 1 })
+        .lean();
 });
 exports.getMessages = getMessages;
