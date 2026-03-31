@@ -53,9 +53,11 @@ const sendMessage = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     var _a, _b, _c;
     try {
         const { conversationId, message } = req.body;
-        const userId = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) !== null && _b !== void 0 ? _b : ((_c = req.body.userId) !== null && _c !== void 0 ? _c : null); // nếu bạn muốn cho phép truyền userId ở body
+        const userId = (_c = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) !== null && _b !== void 0 ? _b : req.body.userId) !== null && _c !== void 0 ? _c : null; // nếu bạn muốn cho phép truyền userId ở body
         if (!message || typeof message !== "string") {
-            return res.status(400).json({ success: false, message: "Missing message" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Missing message" });
         }
         const result = yield ChatService.addMessage({
             conversationId,
@@ -83,7 +85,9 @@ const sendMessageToConversation = (req, res) => __awaiter(void 0, void 0, void 0
         const { message } = req.body;
         const userId = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) !== null && _b !== void 0 ? _b : null;
         if (!message || typeof message !== "string") {
-            return res.status(400).json({ success: false, message: "Missing message" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Missing message" });
         }
         const result = yield ChatService.addMessage({
             conversationId,
@@ -104,12 +108,26 @@ exports.sendMessageToConversation = sendMessageToConversation;
  * GET /api/chat/:conversationId
  */
 const getHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { conversationId } = req.params;
+        // Lấy userId từ token nếu có (MEMBER), hoặc từ body/query/localStorage truyền lên nếu là GUEST
+        const currentUserId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) || req.query.guestId;
+        console.log("currentUserId: ", currentUserId);
         if (!conversationId) {
             return res.status(400).json({ message: "conversationId required" });
         }
+        // Ở tầng Service, bạn cần sửa hàm getMessages để check quyền sở hữu
         const history = yield ChatService.getMessages(conversationId);
+        // [BẢO MẬT] Kiểm tra xem tin nhắn trong cuộc hội thoại này có phải của User hiện tại không
+        if (history.length > 0 && history[0]._id !== currentUserId) {
+            return res
+                .status(403)
+                .json({
+                success: false,
+                message: "Bạn không có quyền xem lịch sử này!",
+            });
+        }
         return res.json({ success: true, data: history });
     }
     catch (err) {

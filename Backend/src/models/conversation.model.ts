@@ -9,7 +9,7 @@ export interface IConversation extends Document {
 
 const ConversationSchema = new Schema<IConversation>(
   {
-    userId: { type: String, required: true },
+    userId: { type: String, required: false },
     title: { type: String, required: true },
   },
   { timestamps: true }

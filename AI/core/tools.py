@@ -3,8 +3,8 @@ import os
 import re
 
 from core.engine import get_rag_context
-from duckduckgo_search import DDGS
-from core.ingester import embed
+from ddgs import DDGS
+from core.ingester import embed, learn_from_chat
 from utils.gemini_teacher import ask_gemini_to_reason
 import state
 
@@ -153,17 +153,14 @@ def tool_smart_intelligence(user_input: str, context: dict):
     # 2. Nếu local không biết -> Web Search
     print("    [Fallback] Đang tìm kiếm trên Internet...")
 
-    # GỌI TRỰC TIẾP, KHÔNG CẦN IMPORT LẠI
     query = tool_rewrite_search_query(user_input, context)
     web_data = tool_web_search(query, context)
 
     # 3. Gemini tổng hợp
     final_answer = ask_gemini_to_reason(user_input, context_info=web_data)
 
-    # 4. Tự học (chỉ học cái xịn)
+    # 4. Tự học
     if final_answer and "không tìm thấy" not in final_answer.lower():
-        from core.ingester import learn_from_chat
-
         learn_from_chat(user_input, final_answer)
 
     return final_answer
