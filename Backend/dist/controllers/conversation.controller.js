@@ -56,13 +56,14 @@ const createConversation = (req, res) => __awaiter(void 0, void 0, void 0, funct
 });
 exports.createConversation = createConversation;
 const getConversations = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const userId = req.query.userId;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
         console.log(userId);
         const list = yield ConversationService.getConversations(userId);
         res.json(list);
     }
-    catch (_a) {
+    catch (_b) {
         res.status(500).json({ error: "Cannot fetch conversations" });
     }
 });
