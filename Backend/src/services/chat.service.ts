@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
+import { aiService } from "./ai.service";
 import ChatMessage from "../models/chat.model";
+import { createConversation } from "./conversation.service";
 import Conversation from "../models/conversation.model";
-import { aiService } from "./ai.service"; // nếu bạn gọi AI ở đây
-
 type Sender = "user" | "ai";
 
 export const addMessage = async (params: {
@@ -10,45 +10,40 @@ export const addMessage = async (params: {
   userId?: string | null;
   sender: Sender;
   message: string;
-  callAI?: boolean; // nếu true thì sẽ gọi aiService.generate và lưu reply
+  callAI?: boolean;
 }) => {
   const { conversationId, userId, sender, message, callAI = true } = params;
 
   let convId = conversationId ?? null;
 
-  // Nếu conversationId có cung cấp nhưng không hợp lệ -> bỏ qua nó
+  // Nếu conversationId có cung cấp nhưng không hợp lệ -> gán về null
   if (convId && !mongoose.Types.ObjectId.isValid(convId)) {
     convId = null;
   }
 
-  // Nếu conversationId không tồn tại hoặc không tìm thấy trong DB -> tạo mới
+  // ================= TỐI ƯU Ở ĐOẠN NÀY =================
   if (!convId) {
-    const conv = await Conversation.create({
-      userId: userId ?? null,
-      title: "New Conversation",
-    });
+    // Gọi thẳng hàm createConversation đã viết sẵn!
+    // Truyền 'message' vào làm firstMessage để nó tự đẻ ra Title xịn
+    const conv = await createConversation(userId ?? "anonymous", message);
     convId = conv._id.toString();
   } else {
-    // Nếu convId hợp lệ nhưng không tồn tại trong DB -> tạo mới với cùng id (không thể set _id trực tiếp nếu dùng create),
-    // nên kiểm tra tồn tại:
+    // Nếu convId hợp lệ nhưng lỡ không tồn tại trong DB (do lỗi gì đó)
     const exists = await Conversation.findById(convId);
     if (!exists) {
-      const conv = await Conversation.create({
-        userId: userId ?? null,
-        title: "New Conversation",
-      });
+      const conv = await createConversation(userId ?? "anonymous", message);
       convId = conv._id.toString();
     }
   }
+  // =====================================================
 
-  // Tạo message từ user (hoặc ai)
+  // Toàn bộ phần tạo ChatMessage và gọi AI phía dưới bạn GIỮ NGUYÊN 100%
   const createdMessage = await ChatMessage.create({
     conversationId: convId,
     sender,
     message,
   });
 
-  // Update conversation updatedAt (và có thể update title nếu muốn dựa vào first message)
   await Conversation.findByIdAndUpdate(convId, { updatedAt: new Date() });
 
   const result: {
@@ -60,7 +55,6 @@ export const addMessage = async (params: {
     message: createdMessage,
   };
 
-  // Nếu là message từ user và cần gọi AI -> gọi aiService và lưu response
   if (sender === "user" && callAI) {
     try {
       const reply = await aiService.generate(userId || "anonymous", message);
@@ -70,12 +64,9 @@ export const addMessage = async (params: {
         message: reply,
       });
 
-      // update again
       await Conversation.findByIdAndUpdate(convId, { updatedAt: new Date() });
-
       result.assistantMessage = assistantMsg;
     } catch (err) {
-      // nếu AI lỗi thì log/throw tuỳ bạn; ở đây ta sẽ not block và trả về created user message
       console.error("AI service error:", err);
     }
   }

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as ConversationService from "../services/conversation.service";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
 export const createConversation = async (req: Request, res: Response) => {
   try {
@@ -14,9 +15,9 @@ export const createConversation = async (req: Request, res: Response) => {
   }
 };
 
-export const getConversations = async (req: Request, res: Response) => {
+export const getConversations = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.query.userId as string;
+    const userId = req.user?.userId as string;
     console.log(userId);
     
     const list = await ConversationService.getConversations(userId);

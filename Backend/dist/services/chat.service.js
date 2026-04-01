@@ -14,49 +14,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMessages = exports.addMessage = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const ai_service_1 = require("./ai.service");
 const chat_model_1 = __importDefault(require("../models/chat.model"));
+const conversation_service_1 = require("./conversation.service");
 const conversation_model_1 = __importDefault(require("../models/conversation.model"));
-const ai_service_1 = require("./ai.service"); // nếu bạn gọi AI ở đây
 const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { conversationId, userId, sender, message, callAI = true } = params;
     let convId = conversationId !== null && conversationId !== void 0 ? conversationId : null;
-    // Nếu conversationId có cung cấp nhưng không hợp lệ -> bỏ qua nó
+    // Nếu conversationId có cung cấp nhưng không hợp lệ -> gán về null
     if (convId && !mongoose_1.default.Types.ObjectId.isValid(convId)) {
         convId = null;
     }
-    // Nếu conversationId không tồn tại hoặc không tìm thấy trong DB -> tạo mới
+    // ================= TỐI ƯU Ở ĐOẠN NÀY =================
     if (!convId) {
-        const conv = yield conversation_model_1.default.create({
-            userId: userId !== null && userId !== void 0 ? userId : null,
-            title: "New Conversation",
-        });
+        // Gọi thẳng hàm createConversation đã viết sẵn!
+        // Truyền 'message' vào làm firstMessage để nó tự đẻ ra Title xịn
+        const conv = yield (0, conversation_service_1.createConversation)(userId !== null && userId !== void 0 ? userId : "anonymous", message);
         convId = conv._id.toString();
     }
     else {
-        // Nếu convId hợp lệ nhưng không tồn tại trong DB -> tạo mới với cùng id (không thể set _id trực tiếp nếu dùng create),
-        // nên kiểm tra tồn tại:
+        // Nếu convId hợp lệ nhưng lỡ không tồn tại trong DB (do lỗi gì đó)
         const exists = yield conversation_model_1.default.findById(convId);
         if (!exists) {
-            const conv = yield conversation_model_1.default.create({
-                userId: userId !== null && userId !== void 0 ? userId : null,
-                title: "New Conversation",
-            });
+            const conv = yield (0, conversation_service_1.createConversation)(userId !== null && userId !== void 0 ? userId : "anonymous", message);
             convId = conv._id.toString();
         }
     }
-    // Tạo message từ user (hoặc ai)
+    // =====================================================
+    // Toàn bộ phần tạo ChatMessage và gọi AI phía dưới bạn GIỮ NGUYÊN 100%
     const createdMessage = yield chat_model_1.default.create({
         conversationId: convId,
         sender,
         message,
     });
-    // Update conversation updatedAt (và có thể update title nếu muốn dựa vào first message)
     yield conversation_model_1.default.findByIdAndUpdate(convId, { updatedAt: new Date() });
     const result = {
         conversationId: convId,
         message: createdMessage,
     };
-    // Nếu là message từ user và cần gọi AI -> gọi aiService và lưu response
     if (sender === "user" && callAI) {
         try {
             const reply = yield ai_service_1.aiService.generate(userId || "anonymous", message);
@@ -65,12 +60,10 @@ const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
                 sender: "ai",
                 message: reply,
             });
-            // update again
             yield conversation_model_1.default.findByIdAndUpdate(convId, { updatedAt: new Date() });
             result.assistantMessage = assistantMsg;
         }
         catch (err) {
-            // nếu AI lỗi thì log/throw tuỳ bạn; ở đây ta sẽ not block và trả về created user message
             console.error("AI service error:", err);
         }
     }
