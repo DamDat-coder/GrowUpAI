@@ -22,7 +22,7 @@ export default function ChatInputBox({
   return (
     <div
       className={`
-        px-2 w-full max-w-3xl mx-auto flex flex-col items-center gap-3 
+        w-full max-w-3xl mx-auto flex flex-col items-center gap-3 
         transition-all duration-500 
         ${isFirstMessageSent ? "translate-y-2" : "translate-y-0"}
       `}

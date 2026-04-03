@@ -73,8 +73,7 @@ export default function Sidebar() {
 
       await refetchConversations();
 
-      console.log(`Chuyển hướng đến /chat/${newConv._id}`);
-      // router.push(`/chat/${newConv._id}`);
+      console.log(`Chuyển hướng đến /${newConv._id}`);
     } catch (error) {
       console.error("Lỗi tạo hội thoại:", error);
     }
@@ -108,7 +107,7 @@ export default function Sidebar() {
     <>
       {/* BURGER MENU BUTTON — only < laptop */}
       <button
-        className="laptop:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-50 dark:bg[#252525] dark:text-black shadow"
+        className="laptop:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-50 dark:bg-[#252525] dark:text-black shadow"
         onClick={() => setOpen(true)}
       >
         <Menu size={20} />
