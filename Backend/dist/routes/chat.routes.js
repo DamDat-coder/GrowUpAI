@@ -8,5 +8,5 @@ const router = (0, express_1.Router)();
 router.post("/", auth_middleware_1.optionalAuthMiddleware, chat_controller_1.sendMessage);
 // Option 2: POST with conversationId param (backward-compatible)
 router.post("/:conversationId", auth_middleware_1.optionalAuthMiddleware, chat_controller_1.sendMessageToConversation);
-router.get("/:conversationId", chat_controller_1.getHistory);
+router.get("/:conversationId", auth_middleware_1.authMiddleware, chat_controller_1.getHistory);
 exports.default = router;

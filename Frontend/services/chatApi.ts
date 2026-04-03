@@ -1,4 +1,6 @@
+import { Message } from "@/types/message";
 import { apiFetch } from "./api";
+import { BackendMessage } from "@/types/chat";
 
 export interface ChatMessage {
   _id?: string;
@@ -18,7 +20,7 @@ export interface SendMessageResponse {
 
 export async function sendMessage(
   message: string,
-  conversationId?: string
+  conversationId?: string,
 ): Promise<SendMessageResponse> {
   if (!message || typeof message !== "string") {
     throw new Error("message is required and must be a string");
@@ -36,22 +38,31 @@ export async function sendMessage(
 
 export async function sendMessageToConversation(
   conversationId: string | undefined,
-  message: string
+  message: string,
 ): Promise<SendMessageResponse> {
   return sendMessage(message, conversationId);
 }
 
-export async function getHistory(
-  conversationId: string
-): Promise<{ success: boolean; data: ChatMessage[] }> {
+export async function getHistory(conversationId: string): Promise<Message[]> {
   if (!conversationId) {
     throw new Error("conversationId is required");
   }
-
-  const res = await apiFetch<{ success: boolean; data: ChatMessage[] }>(
+  console.log("Gọi getHistory");
+  
+  // Gọi API tới Node.js Backend
+  const res = await apiFetch<{ success: boolean; data: BackendMessage[] }>(
     `/chat/${conversationId}`,
-    { method: "GET" }
+    { method: "GET" },
   );
+  console.log(res);
 
-  return res;
+  // Nếu Backend trả về thành công, map nó sang đúng định dạng Message của FE
+  if (res.success && Array.isArray(res.data)) {
+    return res.data.map((item) => ({
+      role: item.sender === "user" ? "user" : "assistant",
+      content: item.message,
+    }));
+  }
+
+  return [];
 }

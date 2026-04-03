@@ -41,9 +41,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHistory = exports.sendMessageToConversation = exports.sendMessage = void 0;
 const ChatService = __importStar(require("../services/chat.service"));
+const conversation_model_1 = __importDefault(require("../models/conversation.model"));
 /**
  * POST /api/chat
  * body: { conversationId?: string, message: string }
@@ -111,23 +115,24 @@ const getHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     var _a;
     try {
         const { conversationId } = req.params;
-        // Lấy userId từ token nếu có (MEMBER), hoặc từ body/query/localStorage truyền lên nếu là GUEST
         const currentUserId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) || req.query.guestId;
-        console.log("currentUserId: ", currentUserId);
         if (!conversationId) {
             return res.status(400).json({ message: "conversationId required" });
         }
-        // Ở tầng Service, bạn cần sửa hàm getMessages để check quyền sở hữu
-        const history = yield ChatService.getMessages(conversationId);
-        // [BẢO MẬT] Kiểm tra xem tin nhắn trong cuộc hội thoại này có phải của User hiện tại không
-        if (history.length > 0 && history[0]._id !== currentUserId) {
-            return res
-                .status(403)
-                .json({
+        // 1. [BẢO MẬT] Tìm cuộc hội thoại này trong DB xem nó thuộc về ai
+        const conversation = yield conversation_model_1.default.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy cuộc hội thoại!" });
+        }
+        // Kiểm tra quyền sở hữu
+        if (conversation.userId !== currentUserId) {
+            return res.status(403).json({
                 success: false,
                 message: "Bạn không có quyền xem lịch sử này!",
             });
         }
+        // 2. Nếu đúng chủ sở hữu thì mới đi bốc tin nhắn ra trả về
+        const history = yield ChatService.getMessages(conversationId);
         return res.json({ success: true, data: history });
     }
     catch (err) {

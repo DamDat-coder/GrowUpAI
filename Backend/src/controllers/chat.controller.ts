@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as ChatService from "../services/chat.service";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import Conversation from "../models/conversation.model";
 
 /**
  * POST /api/chat
@@ -73,29 +74,31 @@ export const sendMessageToConversation = async (
 export const getHistory = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { conversationId } = req.params;
-
-    // Lấy userId từ token nếu có (MEMBER), hoặc từ body/query/localStorage truyền lên nếu là GUEST
     const currentUserId = req.user?.userId || (req.query.guestId as string);
-    console.log("currentUserId: ",currentUserId);
     
     if (!conversationId) {
       return res.status(400).json({ message: "conversationId required" });
     }
 
-    // Ở tầng Service, bạn cần sửa hàm getMessages để check quyền sở hữu
-    const history = await ChatService.getMessages(conversationId);
-
-    // [BẢO MẬT] Kiểm tra xem tin nhắn trong cuộc hội thoại này có phải của User hiện tại không
-    if (history.length > 0 && history[0]._id !== currentUserId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Bạn không có quyền xem lịch sử này!",
-        });
+    // 1. [BẢO MẬT] Tìm cuộc hội thoại này trong DB xem nó thuộc về ai
+    const conversation = await Conversation.findById(conversationId);
+    
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy cuộc hội thoại!" });
     }
 
+    // Kiểm tra quyền sở hữu
+    if (conversation.userId !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không có quyền xem lịch sử này!",
+      });
+    }
+
+    // 2. Nếu đúng chủ sở hữu thì mới đi bốc tin nhắn ra trả về
+    const history = await ChatService.getMessages(conversationId);
     return res.json({ success: true, data: history });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, message: "Server error" });

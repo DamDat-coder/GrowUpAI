@@ -21,9 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
-      <AuthProvider>
-        <body className="bg-gray-50 text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="bg-gray-50 text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
+        <AuthProvider>
           {children}
           <Toaster
             position="top-right"
@@ -35,8 +35,8 @@ export default function RootLayout({
               },
             }}
           />
-        </body>
-      </AuthProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
