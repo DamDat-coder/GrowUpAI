@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Paperclip, Mic, Send } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default function ChatInputBox({
   onSend,
@@ -10,11 +11,9 @@ export default function ChatInputBox({
   isFirstMessageSent: boolean;
 }) {
   const [input, setInput] = useState("");
-  const suggestions = ["Làm việc với file", "Phản biện"];
 
   const handleSubmit = () => {
     if (!input.trim()) return;
-
     onSend(input);
     setInput("");
   };
@@ -22,47 +21,49 @@ export default function ChatInputBox({
   return (
     <div
       className={`
-        w-full max-w-3xl mx-auto flex flex-col items-center gap-3 
-        transition-all duration-500 
-        ${isFirstMessageSent ? "translate-y-2" : "translate-y-0"}
+        w-full max-w-4xl px-6
+        transition-all duration-500 ease-in-out
+        ${
+          isFirstMessageSent
+            ? "fixed bottom-8 left-1/2 -translate-x-1/2 z-20"
+            : "relative mt-10"
+        }
       `}
-      style={{
-        position: isFirstMessageSent ? "absolute" : "relative",
-        bottom: isFirstMessageSent ? "2rem" : "auto",
-      }}
     >
-      <div className="w-full bg-gray-50 shadow-lg rounded-3xl p-4 border border-gray-200  dark:bg-[#252525]">
-        <div className="flex items-center gap-3 border rounded-2xl p-3 bg-gray-50  dark:bg-[#252525]">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder="Nhập câu lệnh"
-            className="flex-1 bg-transparent outline-none dark:text-white text-black"
+      <div className="flex items-center gap-3 border border-gray-200 dark:border-white/10 rounded-2xl p-2 bg-white dark:bg-[#2f2f2f] shadow-lg">
+        {/* Nút Plus */}
+        <button className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0">
+          <Plus size={20} strokeWidth={1.5} />
+        </button>
+
+        {/* Input chính */}
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder="Nhập câu lệnh..."
+          className="flex-1 bg-transparent py-2 outline-none dark:text-white text-black placeholder:text-gray-400 text-sm"
+        />
+
+        {/* Icons bên phải */}
+        <div className="flex items-center gap-3 pr-2 shrink-0">
+          <Paperclip
+            size={18}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
           />
-
-          <Paperclip size={20} className="text-gray-500" />
-          <Mic size={20} className="text-gray-600" />
-
-          <button
-            onClick={handleSubmit}
-            className="p-2 rounded-xl bg-linear-to-r from-blue-500 to-purple-500 text-white shadow"
-          >
-            <Send size={18} />
-          </button>
+          <Mic
+            size={18}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+          />
         </div>
 
-        <div className="hidden tablet:flex gap-2 mt-4 flex-wrap dark:text-black">
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              onClick={() => setInput(s)}
-              className="bg-gray-100 px-3 py-1 rounded-full text-sm shadow-sm dark:bg-[#252525] border dark:border-gray-200 dark:text-white cursor-pointer"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {/* Nút gửi */}
+        <button
+          onClick={handleSubmit}
+          className="p-2 rounded-xl bg-[#0E7C45] hover:bg-[#0c6b3b] text-white shadow-sm transition-all active:scale-95 shrink-0"
+        >
+          <Send size={18} />
+        </button>
       </div>
     </div>
   );

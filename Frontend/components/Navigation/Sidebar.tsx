@@ -19,8 +19,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/authContext";
 import UserBadge from "../Core/UserBadge";
 import AuthPopup from "../Core/AuthPopup";
-import { Conversation } from "@/types/conversation";
-import { createConversation } from "@/services/conversationApi"; // Giả định API tạo mới
 import ConversationList from "./ConversationList";
 
 // ✅ IMPORT CUSTOM HOOK MỚI
@@ -42,10 +40,10 @@ export default function Sidebar() {
   const [showAuth, setShowAuth] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const isAuthInitialized = !isLoadingAuth;
-  
+
   const { conversations, refetchConversations } = useConversationCache(
     user?.id || null,
-    isAuthInitialized
+    isAuthInitialized,
   );
 
   // ✅ SỬ DỤNG useCallback để ổn định hàm đóng Mobile Menu
@@ -58,27 +56,6 @@ export default function Sidebar() {
     setIsDropdownOpen((prev) => !prev);
   }, []);
 
-  // 🔴 LOGIC TẠO MỚI (Sử dụng refetchConversations để cập nhật Cache)
-  const handleCreateNewConversation = async (): Promise<void> => {
-    if (open) closeMobileMenuCallback();
-    console.log("user trong hàm handleCreateNewConversation:", user);
-
-    if (!user) {
-      setShowAuth(true);
-      return;
-    }
-
-    try {
-      const newConv = (await createConversation()) as Conversation;
-
-      await refetchConversations();
-
-      console.log(`Chuyển hướng đến /${newConv._id}`);
-    } catch (error) {
-      console.error("Lỗi tạo hội thoại:", error);
-    }
-  };
-
   // HÀM TYPE GUARD ĐỂ LỌC LINK
   const isLinkItem = (item: BaseItem): item is BaseItem & { href: string } => {
     return item.href !== undefined;
@@ -87,22 +64,20 @@ export default function Sidebar() {
   // ✅ KHÔI PHỤC LẠI baseItems và Nút Action
   const baseItems: BaseItem[] = [
     {
-      label: "Thêm cuộc trò chuyện mới",
+      label: "Cuộc trò chuyện mới",
       icon: <PlusCircle size={20} />,
-      action: handleCreateNewConversation,
+      href: "/",
+      action: () => {
+        console.log("Trigger refetching...");
+        refetchConversations();
+        if (open) closeMobileMenuCallback();
+      },
     },
     { href: "/files", label: "Tệp", icon: <Folder size={20} /> },
     { href: "/settings", label: "Cài đặt", icon: <Settings size={20} /> },
   ];
 
-  // THAO TÁC TÁCH MẢNG ĐÃ SỬA LỖI TS(18048)
-  const isActionItem = (
-    item: BaseItem
-  ): item is BaseItem & { action: () => void } => {
-    return item.action !== undefined;
-  };
   const linkItems = baseItems.filter(isLinkItem);
-  const actionItemWithAction = baseItems.filter(isActionItem)[0];
   return (
     <>
       {/* BURGER MENU BUTTON — only < laptop */}
@@ -110,131 +85,109 @@ export default function Sidebar() {
         className="laptop:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-50 dark:bg-[#252525] dark:text-black shadow"
         onClick={() => setOpen(true)}
       >
-        <Menu size={20} />
+        <Menu size={20} className="dark:text-white" />
       </button>
 
       {/* ===== Desktop Sidebar ===== */}
       <aside
         className="
-          group
-          fixed h-[95vh] w-16 hover:w-64
-          bg-gray-50/70 backdrop-blur-md border-r border-gray-200
-          flex-col py-6 gap-4 rounded-2xl m-3 shadow-sm transition-all duration-300
-          dark:bg-[#252525]
-          hidden laptop:flex
+          group fixed h-[95vh] z-50
+          w-16 hover:w-64
+          bg-white/80 dark:bg-[#1a1a1a]/90 backdrop-blur-xl
+          border-r border-gray-200 dark:border-white/10
+           flex-col py-6 m-3 rounded-2xl shadow-xl
+          transition-[width] duration-300 ease-in-out
+          hidden laptop:flex overflow-hidden
         "
       >
-        <div className="px-3 mb-3 laptop:hidden">{user && <UserBadge />}</div>
+        <div className="flex flex-col gap-2 w-full">
+          {baseItems.map((item, idx) => {
+            // Logic xử lý Click (Action hoặc Link)
+            const handleClick = () => {
+              if (item.action) item.action();
+              if (open) closeMobileMenuCallback();
+            };
 
-        <div className="flex flex-col gap-1">
-          {/* NÚT THÊM CUỘC TRÒ CHUYỆN MỚI (Desktop) */}
-          {actionItemWithAction && (
-            <button
-              onClick={actionItemWithAction.action}
-              className="m-0 flex items-center gap-3 mx-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:text-black transition-all"
-            >
-              <span className="min-w-10 h-10 flex items-center justify-center bg-linear-to-r from-blue-600 to-purple-600 text-blue-600 bg-clip-text">
-                {actionItemWithAction.icon}
-              </span>
-              <span
-                className="
-                    text-sm font-medium opacity-0 
-                    group-hover:opacity-100 group-hover:translate-x-0 
-                    -translate-x-2 transition-all duration-300 whitespace-nowrap bg-linear-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text
-                "
+            const Content = (
+              <>
+                {/* Cố định vùng chứa Icon để không bị lệch khi giãn Sidebar */}
+                <div className="min-w-16 h-10 flex items-center justify-center shrink-0">
+                  {item.icon}
+                </div>
+                {/* Chữ chỉ hiện khi Group Hover */}
+                <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden text-ellipsis mr-4">
+                  {item.label}
+                </span>
+              </>
+            );
+
+            return item.href ? (
+              <Link
+                key={idx}
+                href={item.href}
+                onClick={handleClick}
+                className="flex items-center h-12 mx-0 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 rounded-none group-hover:rounded-xl group-hover:mx-3"
               >
-                {actionItemWithAction.label}
-              </span>
-            </button>
-          )}
-
-          {/* CÁC MỤC LINK KHÁC (Desktop) */}
-          {linkItems.map((item, idx) => (
-            <Link
-              key={idx}
-              href={item.href}
-              className="m-0 flex items-center gap-3 mx-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:text-black transition-all"
-            >
-              <span className="min-w-10 h-10 flex items-center justify-center">
-                {item.icon}
-              </span>
-              <span
-                className="
-                  text-sm font-medium opacity-0 
-                  group-hover:opacity-100 group-hover:translate-x-0 
-                  -translate-x-2 transition-all duration-300 whitespace-nowrap
-                "
+                {Content}
+              </Link>
+            ) : (
+              <button
+                key={idx}
+                onClick={handleClick}
+                className="flex items-center h-12 mx-0 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 rounded-none group-hover:rounded-xl group-hover:mx-3 text-left"
               >
-                {item.label}
-              </span>
-            </Link>
-          ))}
+                {Content}
+              </button>
+            );
+          })}
 
-          {/* MỤC HỘI THOẠI VÀ DROPDOWN (Desktop) */}
-          {/* ... (Phần này sử dụng handleToggleDropdown) ... */}
-          <div className="flex flex-col">
+          {/* MỤC HỘI THOẠI DROPDOWN */}
+          <div className="flex flex-col w-full">
             <button
-              onClick={() => handleToggleDropdown()}
-              className="m-0 flex items-center gap-3 mx-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:text-black transition-all text-left"
+              onClick={handleToggleDropdown}
+              className="flex items-center h-12 mx-0 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 rounded-none group-hover:rounded-xl group-hover:mx-3 text-left"
             >
-              <span className="min-w-10 h-10 flex items-center justify-center">
+              <div className="min-w-16 h-10 flex items-center justify-center shrink-0">
                 <MessagesSquare size={20} />
-              </span>
-              <span
-                className="
-                      text-sm font-medium opacity-0 
-                      group-hover:opacity-100 group-hover:translate-x-0 
-                      -translate-x-2 transition-all duration-300 whitespace-nowrap grow flex justify-between items-center mr-3
-                    "
-              >
-                Hội thoại
+              </div>
+              <div className="flex items-center justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-4">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Hội thoại
+                </span>
                 {isDropdownOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-              </span>
+                  <ChevronUp size={14} />
+                ) : (
+                  <ChevronDown size={14} />
+                )}
+              </div>
             </button>
-            {/* Danh sách Dropdown (Desktop) */}
-            <div
-              className={`
-                overflow-hidden transition-[max-height] duration-300 ease-in-out
-                ${isDropdownOpen ? "max-h-96" : "max-h-0"}
 
-                opacity-0 
-                group-hover:opacity-100 
-                transition-opacity duration-300
-              `}
+            {/* Hiệu ứng trượt Grid mượt mà */}
+            <div
+              className={`grid transition-all duration-300 ease-in-out ${isDropdownOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
             >
-              {user ? (
-                <ConversationList conversations={conversations} />
-              ) : (
-                <p className="text-xs text-center p-2 opacity-60">
-                  Đăng nhập để xem hội thoại
-                </p>
-              )}
+              <div className="overflow-hidden">
+                <div className="px-4 py-2 group-hover:block hidden">
+                  {user ? (
+                    <ConversationList conversations={conversations} />
+                  ) : (
+                    <p className="text-xs opacity-50">Đăng nhập để xem</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* NÚT TOGGLE THEME Ở BOTTOM */}
         <button
           onClick={toggleTheme}
-          className="
-            mt-auto mx-3 py-2 flex items-center gap-3 rounded-xl
-            hover:bg-gray-100 transition-all dark:hover:text-black
-          "
+          className="mt-auto flex items-center h-12 mx-0 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 rounded-none group-hover:rounded-xl group-hover:mx-3"
         >
-          <span className="min-w-10 h-10 flex items-center justify-center">
+          <div className="min-w-16 h-10 flex items-center justify-center shrink-0">
             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-          </span>
-
-          <span
-            className="
-              text-sm font-medium opacity-0 
-              group-hover:opacity-100 group-hover:translate-x-0 
-              -translate-x-2 transition-all duration-300 whitespace-nowrap
-            "
-          >
+          </div>
+          <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             {theme === "light" ? "Dark Mode" : "Light Mode"}
           </span>
         </button>
@@ -257,6 +210,7 @@ export default function Sidebar() {
           transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           laptop:hidden
+          flex flex-col
         `}
       >
         <button
@@ -267,114 +221,101 @@ export default function Sidebar() {
         </button>
 
         {/* USER SECTION (Mobile) */}
-        <div className="mt-14 px-4 pb-4">
-          {user ? (
-            <UserBadge />
-          ) : (
-            <button
-              onClick={() => {
-                setOpen(false);
-                setShowAuth(true);
-              }}
-              className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-xl w-full"
-            >
-              <User size={20} />
-              <span className="font-medium">Đăng nhập</span>
-            </button>
-          )}
-        </div>
-
-        {/* MENU LIST (Mobile) */}
-        <div className="flex flex-col gap-3 px-4">
-          {actionItemWithAction && (
-            <button
-              onClick={() => {
-                actionItemWithAction.action();
-                closeMobileMenuCallback();
-              }}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-500"
-            >
-              {actionItemWithAction.icon}
-              <span className="text-sm font-medium">
-                {actionItemWithAction.label}
-              </span>
-            </button>
-          )}
-          {/* CÁC MỤC LINK KHÁC (Mobile) */}
-          {linkItems.map((item, idx) => (
-            <Link
-              key={idx}
-              href={item.href}
-              onClick={closeMobileMenuCallback}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
-            </Link>
-          ))}
-          {/* MỤC HỘI THOẠI VÀ DROPDOWN (Mobile) */}
-          <div className="flex flex-col">
-            <button
-              onClick={() => handleToggleDropdown()}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
-            >
-              <MessagesSquare size={20} />
-              <span className="text-sm font-medium grow">Hội thoại</span>
-              {isDropdownOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
-
-            {/* Danh sách Dropdown (Mobile) */}
-            <div
-              className={`
-                overflow-hidden transition-[max-height] duration-300 ease-in-out
-                ${isDropdownOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
-              `}
-            >
-              {user ? (
-                <ConversationList
-                  conversations={conversations}
-                  closeMobileMenu={closeMobileMenuCallback}
-                />
-              ) : (
-                <p className="text-xs text-center p-2 opacity-60">
-                  Đăng nhập để xem hội thoại
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-2 flex flex-col gap-2">
-            {/* Toggle theme (Mobile) */}
-            <button
-              onClick={() => {
-                toggleTheme();
-                setOpen(false);
-              }}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-              <span className="text-sm font-medium">
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
-              </span>
-            </button>
-
-            {/* Logout (Mobile) */}
-            {user && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="mt-14 px-4 pb-4">
+            {user ? (
+              <UserBadge />
+            ) : (
               <button
                 onClick={() => {
-                  logout();
                   setOpen(false);
+                  setShowAuth(true);
                 }}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 mt-auto"
+                className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-xl w-full"
               >
                 <User size={20} />
-                <span className="text-sm font-medium">Đăng xuất</span>
+                <span className="font-medium">Đăng nhập</span>
               </button>
             )}
+          </div>
+
+          {/* MENU LIST (Mobile) */}
+          <div className="flex flex-col gap-3 px-4">
+            {/* CÁC MỤC LINK KHÁC (Mobile) */}
+            {linkItems.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.href}
+                onClick={closeMobileMenuCallback}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                {item.icon}
+                <span className="text-sm font-medium">{item.label}</span>
+              </Link>
+            ))}
+            {/* MỤC HỘI THOẠI VÀ DROPDOWN (Mobile) */}
+            <div className="flex flex-col">
+              <button
+                onClick={() => handleToggleDropdown()}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+              >
+                <MessagesSquare size={20} />
+                <span className="text-sm font-medium grow">Hội thoại</span>
+                {isDropdownOpen ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </button>
+
+              {/* Danh sách Dropdown (Mobile) */}
+              <div
+                className={`
+    grid transition-all duration-300 ease-in-out
+    ${isDropdownOpen ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"}
+  `}
+              >
+                <div className="overflow-hidden">
+                  {user ? (
+                    <ConversationList conversations={conversations} />
+                  ) : (
+                    <p className="text-xs text-center p-2 opacity-60">
+                      Đăng nhập để xem hội thoại
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2">
+              {/* Toggle theme (Mobile) */}
+              <button
+                onClick={() => {
+                  toggleTheme();
+                  setOpen(false);
+                }}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+                <span className="text-sm font-medium">
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
+                </span>
+              </button>
+
+              {/* Logout (Mobile) */}
+              {user && (
+                <button
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 mt-auto"
+                >
+                  <User size={20} />
+                  <span className="text-sm font-medium">Đăng xuất</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -383,7 +324,10 @@ export default function Sidebar() {
       <AuthPopup
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
-        onSuccess={() => setShowAuth(false)}
+        onSuccess={() => {
+          setShowAuth(false);
+          refetchConversations();
+        }}
       />
     </>
   );
