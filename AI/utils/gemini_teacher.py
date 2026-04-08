@@ -1,4 +1,4 @@
-# core/gemini_teacher.py
+# ultis/gemini_teacher.py
 import os
 from dotenv import load_dotenv
 from google import genai
@@ -40,31 +40,26 @@ def ask_gemini_to_understand(
         )
 
     prompt = f"""
-Bạn là AI hiểu vấn đề người dùng.
-Lịch sử cuộc trò chuyện gần đây:
-{history_text or "Chưa có lịch sử."}
+        Bạn là AI phân tích ý định. Hãy xác định nguồn tri thức phù hợp nhất cho câu hỏi.
 
-Câu hỏi hiện tại: "{user_text}"
+        Lịch sử: {history_text}
+        Câu hỏi: "{user_text}"
+        Goals: {available_goals}
 
+        PHÂN LOẠI KNOWLEDGE_SOURCE:
+        1. "internal": Hỏi về tài liệu của nội bộ, dự án GrowUp AI, code nội bộ, file PDF đã upload.
+        2. "external": Hỏi về tin tức thời sự, giá xăng dầu hôm nay, kiến thức phổ thông, sự kiện 2024-2026.
+        3. "hybrid": Cần cả tài liệu nội bộ và tra cứu thêm bên ngoài.
 
-Intent gợi ý: {intent_signal or "Không có"}
-
-
-Các goal hợp lệ: {available_goals}
-
-
-Trả về đúng JSON:
-{{
-  "goal": "...",
-  "confidence": 0.0-1.0,
-  "requires_external_knowledge": true/false,
-  "explanation": "lý do ngắn gọn"
-}}
-Chỉ chọn goal trong danh sách. Nếu không chắc thì goal = "general_chat".
-
-
-
-"""
+        Trả về đúng JSON:
+        {{
+          "goal": "...",
+          "confidence": 0.0-1.0,
+          "requires_external_knowledge": true/false,
+          "knowledge_source": "internal" | "external" | "hybrid",
+          "explanation": "tại sao chọn nguồn này"
+        }}
+    """
 
     try:
         response = client.models.generate_content(
@@ -76,7 +71,20 @@ Chỉ chọn goal trong danh sách. Nếu không chắc thì goal = "general_cha
                 response_mime_type="application/json",
             ),
         )
-        return json.loads(response.text)
+        raw_text = response.text.strip()
+
+        # 1. Xóa Markdown code blocks nếu có
+        clean_json = raw_text.replace("```json", "").replace("```", "").strip()
+
+        return json.loads(clean_json)
+    except Exception as e:
+        print(f"[Gemini Understand ERROR] {e} | Raw: {raw_text[:100]}")
+        # Trả về mặc định để không dừng hệ thống
+        return {
+            "goal": "general_chat",
+            "knowledge_source": "external",
+            "confidence": 0.1,
+        }
 
     except Exception as e:
         print(f"[Gemini Understand ERROR] {e}")
@@ -111,12 +119,15 @@ def ask_gemini_to_reason(
         )
     system_instruction = (
         "Bạn là GrowUp AI - Trợ lý đa năng chuyên nghiệp.\n"
+        "Nếu trong câu hỏi có những thứ liên quan đến số liệu, thống kê, ... hãy tìm hiểu kỹ sau đó mới trả lời.\n"
+        "Nếu câu hỏi mang tính thời sự (giá cả hôm nay, tin tức 24h qua) mà trong Context không có số liệu cụ thể, BẮT BUỘC phải chọn tool web_search thay vì rag.\n"
         "1. Nếu trả lời về lập trình (Coding): Sử dụng Markdown chuẩn, giải thích rõ ràng.\n"
         "2. Nếu là phân tích tài liệu (Analysis): Trình bày có cấu trúc, luận điểm rõ ràng.\n"
-        "3. Ngôn ngữ: Tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp."
+        "3. Nếu trả lời về các số liệu: Tìm kiếm từ các nguồn uy tín và có liên quan\n"
+        "4. Ngôn ngữ: Tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp."
     )
     prompt = f"""
-Bạn là một trợ lý AI thông minh. Nhiệm vụ của bạn là trả lời câu hỏi dựa trên Lịch sử và Thông tin tham khảo dưới đây.
+Bạn là một trợ lý AI thông minh. Hãy sử dụng thông tin tham khảo để hiểu về chính sách, nhưng đối với các số liệu biến động hoặc tin tức mới nhất, hãy sử dụng kết quả từ công cụ tìm kiếm và kiến thức nền của bạn để bổ sung. Tuyệt đối không trả lời 'Tôi không biết' nếu vấn đề đó có thể tìm kiếm được trên internet.
 
 Lịch sử cuộc trò chuyện:
 {history_text or "Không có lịch sử."}
@@ -140,7 +151,7 @@ Yêu cầu:
             config=types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
             ),
         )
         return response.text.strip()

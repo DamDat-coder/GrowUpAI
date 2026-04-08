@@ -3,6 +3,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authContext";
 import { Toaster } from "react-hot-toast";
+import { ModalProvider } from "@/contexts/ModalContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +25,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="bg-gray-50 text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
         <AuthProvider>
-          {children}
+          <ModalProvider>{children}</ModalProvider>
           <Toaster
             position="top-right"
             toastOptions={{

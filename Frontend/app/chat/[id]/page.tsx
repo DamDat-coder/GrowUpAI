@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import ChatMessages from "@/components/Home/ChatMessages";
-import ChatInputBox from "@/components/Home/ChatInputBox";
+import ChatMessages from "@/components/Home/Chat/ChatMessages";
+import ChatInputBox from "@/components/Home/Chat/ChatInputBox";
 import { Message } from "@/types/message";
 import { getHistory, sendMessage } from "@/services/chatApi";
 

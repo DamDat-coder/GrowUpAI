@@ -123,22 +123,22 @@ export default function AuthPopup({
             {/* Logo */}
             <div className="flex justify-center items-center">
               <Image
-                src="/Core/logo.svg"
-                width={90}
-                height={90}
+                src="/Core/logo_light_theme.svg"
+                width={100}
+                height={100}
                 alt="logo"
                 className="p-1 rounded-lg dark:hidden"
               />
               <Image
-                src="/Core/logo_dark_theme.svg"
-                width={90}
-                height={90}
+                src="/Core/logo_dark_theme_v1.svg"
+                width={100}
+                height={100}
                 alt="logo"
                 className="p-1 rounded-lg hidden dark:block"
               />
             </div>
 
-            <h2 className="text-xl font-bold text-center pb-4">
+            <h2 className="font-bold text-center pb-4">
               {mode === "login" ? "Đăng nhập" : "Đăng ký tài khoản"}
             </h2>
 

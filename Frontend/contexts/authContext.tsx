@@ -17,6 +17,7 @@ import {
 } from "@/services/userApi";
 import { IUser } from "@/types/auth";
 import toast from "react-hot-toast";
+import { redirect } from "next/navigation";
 
 interface AuthContextType {
   user: IUser | null;
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // --- Check current user ---
   const checkAuth = async () => {
     const accessToken = localStorage.getItem("accessToken");
-   if (!accessToken) {
+    if (!accessToken) {
       setUser(null);
       return;
     }
@@ -102,13 +103,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (
     name: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<boolean> => {
     try {
       const { user: userData, accessToken } = await registerApi(
         name,
         email,
-        password
+        password,
       );
 
       setUser(userData);
@@ -132,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("accessToken");
     document.cookie = "refreshToken=; max-age=0; path=/";
     toast.success("Đã đăng xuất!");
+    redirect("/chat");
   };
 
   const value: AuthContextType = {
@@ -141,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     logout,
     checkAuth,
-    isLoadingAuth: loading
+    isLoadingAuth: loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

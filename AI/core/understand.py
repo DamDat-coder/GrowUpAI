@@ -1,6 +1,7 @@
 # core/understand.py
 import re
 
+from core.engine import get_semantic_cache
 from core.goals import AVAILABLE_GOALS
 from utils.nlp_tools import predict_intent
 from utils.gemini_teacher import ask_gemini_to_understand
@@ -10,6 +11,13 @@ UNDERSTAND_CACHE = {}
 
 
 def understand(user_text: str, state) -> dict:
+    cached_answer = get_semantic_cache(user_text)
+    if cached_answer:
+        return {
+            "goal": "cached_response",
+            "content": cached_answer,
+            "short_circuit": True,
+        }
     if user_text in UNDERSTAND_CACHE:
         print("[DEBUG] Hit understand cache")
         return UNDERSTAND_CACHE[user_text].copy()
@@ -45,8 +53,10 @@ def understand(user_text: str, state) -> dict:
     result = gemini_result or {
         "goal": "general_chat",
         "confidence": 0.0,
-        "requires_external_knowledge": False,
+        "knowledge_source": "external",
     }
+    if result.get("knowledge_source") in ["external", "hybrid"]:
+        result["requires_external_knowledge"] = True
 
     result["text"] = user_text
     result["intent_signal"] = intent

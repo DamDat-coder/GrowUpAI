@@ -1,4 +1,4 @@
-export default function Hero() {
+export default function Greeting() {
   return (
     <div className="w-[80%] tablet:w-[90%] laptop:w-full flex flex-col items-center justify-center mt-24">
       <h2 className="text-2xl laptop:text-3xl font-semibold text-gray-900 dark:text-white">

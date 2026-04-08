@@ -1,6 +1,8 @@
 # core/tools.py
+from http import client
 import os
 import re
+import types
 
 from core.engine import get_rag_context
 from ddgs import DDGS
@@ -107,39 +109,41 @@ def tool_calculator(expression: str):
 
 
 @register_tool("rewrite_search_query")
-def tool_rewrite_search_query(user_text: str, context: dict):
-    print("    [Tool] Đang rewrite search query...")
+def tool_rewrite_search_query(user_text: str, execution_context: dict) -> str:
+    """
+    Nâng cấp: Chuyển câu hỏi tự nhiên thành bộ từ khóa tìm kiếm (Search Queries).
+    """
+    if not client:
+        return user_text
 
-    if not user_text:
-        return "No input provided"
+    system_instruction = (
+        "Bạn là chuyên gia tối ưu hóa truy vấn tìm kiếm (SEO Search Expert).\n"
+        "Nhiệm vụ: Chuyển câu hỏi dài dòng của người dùng thành một chuỗi từ khóa tìm kiếm ngắn gọn, hiệu quả.\n"
+        "Quy tắc:\n"
+        "1. Loại bỏ từ cảm thán, từ nối (là ai, cho hỏi, danh tính, đợt vừa rồi...).\n"
+        "2. Giữ lại các thực thể (Tên người, chức vụ, địa danh, mốc thời gian).\n"
+        "3. Nếu câu hỏi có mốc thời gian mơ hồ (vừa rồi), hãy thay bằng năm hiện tại (2026).\n"
+        "4. Chỉ trả về chuỗi từ khóa, không giải thích."
+    )
 
-    remove_patterns = [
-        "tôi muốn bạn",
-        "hãy",
-        "giúp tôi",
-        "cho tôi",
-        "làm ơn",
-        "tôi cần bạn",
-    ]
+    prompt = f"Câu hỏi người dùng: '{user_text}'"
 
-    query = user_text.lower()
-
-    for p in remove_patterns:
-        query = query.replace(p, "")
-
-    print("[DEBUG remove_patterns]: ", query)
-
-    query = query.strip()
-
-    if "6 tháng" in query or "gần đây" in query:
-        query += " statistics report"
-
-    print(f"    [Rewrite Result]: {query}")
-
-    context["search_query"] = query
-
-    return query
-
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2, # Thấp để tránh sáng tạo quá đà
+                system_instruction=system_instruction,
+                max_output_tokens=100,
+            ),
+        )
+        query = response.text.strip().replace('"', '')
+        print(f"    [Rewrite Result]: {query}")
+        return query
+    except Exception as e:
+        print(f"[Rewrite Error]: {e}")
+        return user_text # Fallback dùng text gốc
 
 @register_tool("smart_intelligence")
 def tool_smart_intelligence(user_input: str, context: dict):

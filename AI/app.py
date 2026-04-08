@@ -7,7 +7,7 @@ import state
 from core.understand import understand
 from core.planner import plan
 from core.executor import Executor
-from core.tools import GLOBAL_TOOLS_REGISTRY # Hoặc dict tools cũ của bạn
+from core.tools import GLOBAL_TOOLS_REGISTRY  # Hoặc dict tools cũ của bạn
 
 app = FastAPI(title="GrowUp AI API")
 
@@ -22,14 +22,16 @@ app.add_middleware(
 
 executor = Executor(tools=GLOBAL_TOOLS_REGISTRY)
 
+
 class ChatRequest(BaseModel):
     user_id: str
     message: str
 
+
 @app.post("/api/v1/chat")
 async def chat_endpoint(request: ChatRequest):
     user_text = request.message.strip()
-    
+
     if not user_text:
         raise HTTPException(status_code=400, detail="Tin nhắn không được để trống")
 
@@ -48,10 +50,17 @@ async def chat_endpoint(request: ChatRequest):
         last_action = execution_plan["steps"][-1]["action"]
         final_answer = result_context.get(last_action)
 
+        if "không đề cập" in final_answer or "không có thông tin" in final_answer or "không cung cấp thông tin chi tiết" in final_answer:
+            # Ép Planner tạo lại một kế hoạch mới sử dụng Web Search
+            print("user_text: ",user_text)
+            new_plan = {"steps": [{"action": "web_search", "query": user_text}]}
+            result_context = executor.run(new_plan)
+            final_answer = result_context.get("web_search")
+
         return {
             "status": "success",
             "user_id": request.user_id,
-            "response": final_answer
+            "response": final_answer,
         }
 
     except Exception as e:

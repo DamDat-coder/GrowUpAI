@@ -13,6 +13,7 @@ CONVERSATION_HISTORY = []
 CURRENT_FILE_NAME = None
 CURRENT_DF = None
 
+LAST_SYNC_TIMESTAMP = None
 # --- NLP & Intent Mapping ---
 SBERT_MODEL = SentenceTransformer("keepitreal/vietnamese-sbert")
 
