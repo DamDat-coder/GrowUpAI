@@ -123,14 +123,14 @@ export default function AuthPopup({
             {/* Logo */}
             <div className="flex justify-center items-center">
               <Image
-                src="/Core/logo.png"
+                src="/Core/logo.svg"
                 width={90}
                 height={90}
                 alt="logo"
                 className="p-1 rounded-lg dark:hidden"
               />
               <Image
-                src="/Core/logo_dark_theme.png"
+                src="/Core/logo_dark_theme.svg"
                 width={90}
                 height={90}
                 alt="logo"

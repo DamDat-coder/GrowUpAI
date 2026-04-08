@@ -23,3 +23,15 @@
 
 /* Ép quy tắc dark mode dựa trên class .dark ở thẻ html */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* code block */
+pre {
+  border-radius: 12px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+/* inline code */
+code {
+  font-size: 0.85em;
+}

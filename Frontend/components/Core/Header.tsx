@@ -16,25 +16,25 @@ export default function Header() {
   return (
     <>
       <header className="hidden tablet:hidden laptop:flex desktop:flex absolute top-4 left-0 right-0 justify-center">
-        <Link
+        {/* <Link
           href="/"
           className="flex items-center justify-center p-3 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
         >
           <Image
-            src="/Core/logo_light_theme.png"
+            src="/Core/logo_light_theme.svg"
             width={500}
             height={500}
             alt="logo"
             className="w-[40%] dark:hidden"
           />
           <Image
-            src="/Core/logo_dark_theme_v1.png"
+            src="/Core/logo_dark_theme_v1.svg"
             width={500}
             height={500}
             alt="logo"
             className="w-[40%] hidden dark:block"
           />
-        </Link>
+        </Link> */}
 
         {/* USER AREA */}
         <div
