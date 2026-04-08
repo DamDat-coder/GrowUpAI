@@ -1,7 +1,7 @@
 // app/chat/layout.tsx
 "use client";
-import Header from "@/components/Core/Header";
-import Sidebar from "@/components/Navigation/Sidebar";
+import Header from "@/components/Core/Header/Header";
+import Sidebar from "@/components/Navigation/Sidebar/Sidebar";
 
 export default function ChatLayout({
   children,

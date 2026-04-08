@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Hero from "@/components/Home/Greeting";
-import ChatInputBox from "@/components/Home/ChatInputBox";
+import Greeting from "@/components/Home/Style/Greeting";
+import ChatInputBox from "@/components/Home/Chat/ChatInputBox";
 import { sendMessage } from "@/services/chatApi";
 
 export default function ChatPage() {
@@ -26,8 +26,8 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto h-screen overflow-hidden px-6">
-      <Hero />
+    <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto h-screen overflow-hidden px-6 items-center">
+      <Greeting />
       <div className="py-4 w-full">
         <ChatInputBox
           onSend={handleSendFirstMessage}

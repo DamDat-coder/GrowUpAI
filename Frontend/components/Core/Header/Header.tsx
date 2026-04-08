@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { User } from "lucide-react";
 import { useState } from "react";
-import AuthPopup from "./AuthPopup";
-import UserMenu from "./UserMenu";
+import AuthPopup from "../Auth/AuthPopup";
+import UserMenu from "../Auth/UserMenu";
 import { useAuth } from "@/contexts/authContext";
 import Link from "next/link";
 
@@ -15,27 +15,23 @@ export default function Header() {
 
   return (
     <>
-      <header className="hidden tablet:hidden laptop:flex desktop:flex absolute top-4 left-0 right-0 justify-center">
-        {/* <Link
-          href="/"
-          className="flex items-center justify-center p-3 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
-        >
+      <header className="flex items-center absolute top-6 left-0 right-0">
+        <Link href="/" className=" flex items-center translate-x-16 laptop:translate-x-24">
           <Image
             src="/Core/logo_light_theme.svg"
-            width={500}
-            height={500}
+            width={100}
+            height={100}
             alt="logo"
-            className="w-[40%] dark:hidden"
+            className=" dark:hidden"
           />
           <Image
             src="/Core/logo_dark_theme_v1.svg"
-            width={500}
-            height={500}
+            width={100}
+            height={100}
             alt="logo"
-            className="w-[40%] hidden dark:block"
+            className=" hidden dark:block"
           />
-        </Link> */}
-
+        </Link>
         {/* USER AREA */}
         <div
           className="absolute right-6"
