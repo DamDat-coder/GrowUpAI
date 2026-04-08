@@ -3,12 +3,25 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { PanelRight, MessagesSquare, ChevronUp, ChevronDown, Sun, Moon } from "lucide-react";
+import {
+  PanelRight,
+  MessagesSquare,
+  ChevronUp,
+  ChevronDown,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
 import ConversationList from "../ConversationList";
 import { SharedSidebarProps } from "@/types/sidebar";
 
-export default function SidebarDesktop({ items, conversations, user, theme, toggleTheme }: SharedSidebarProps) {
+export default function SidebarDesktop({
+  items,
+  conversations,
+  user,
+  theme,
+  toggleTheme,
+}: SharedSidebarProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
 
@@ -26,9 +39,20 @@ export default function SidebarDesktop({ items, conversations, user, theme, togg
     >
       {/* Header & Pin Button */}
       <div className="flex justify-between items-center mb-4">
-        <Link href="/" className="p-4 hidden group-hover:flex group-data-[expanded=true]:flex">
-          <Image src={theme === "light" ? "/Core/short_cut_logo_light_theme.svg" : "/Core/short_cut_logo_dark_theme_v1.svg"} 
-            width={25} height={25} alt="logo" />
+        <Link
+          href="/"
+          className="p-4 hidden group-hover:flex group-data-[expanded=true]:flex"
+        >
+          <Image
+            src={
+              theme === "light"
+                ? "/Core/short_cut_logo_light_theme.svg"
+                : "/Core/short_cut_logo_dark_theme_v1.svg"
+            }
+            width={25}
+            height={25}
+            alt="logo"
+          />
         </Link>
         <div className="relative flex flex-1 group-hover:pr-10 group-data-[expanded=true]:pr-10 justify-center items-center h-10">
           <PanelRight
@@ -59,14 +83,26 @@ export default function SidebarDesktop({ items, conversations, user, theme, togg
             </div>
             <div className="flex items-center justify-between w-full opacity-0 group-hover:opacity-100 group-data-[expanded=true]:opacity-100 transition-opacity pr-4">
               <span className="text-sm font-medium">Hội thoại</span>
-              {isDropdownOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {isDropdownOpen ? (
+                <ChevronUp size={14} />
+              ) : (
+                <ChevronDown size={14} />
+              )}
             </div>
           </button>
 
-          <div className={`grid transition-all duration-300 ${isDropdownOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+          <div
+            className={` grid transition-all duration-300 ${isDropdownOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
             <div className="overflow-hidden">
               <div className="px-4 py-2 hidden group-hover:block group-data-[expanded=true]:block">
-                {user ? <ConversationList conversations={conversations} /> : <p className="text-xs opacity-50">Đăng nhập để xem</p>}
+                {user ? (
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    <ConversationList conversations={conversations} />
+                  </div>
+                ) : (
+                  <p className="text-xs opacity-50">Đăng nhập để xem</p>
+                )}
               </div>
             </div>
           </div>
@@ -74,7 +110,10 @@ export default function SidebarDesktop({ items, conversations, user, theme, togg
       </div>
 
       {/* Theme Toggle at Bottom */}
-      <button onClick={toggleTheme} className="mt-auto flex items-center h-12 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl">
+      <button
+        onClick={toggleTheme}
+        className="mt-auto flex items-center h-12 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl"
+      >
         <div className="min-w-16 h-10 flex items-center justify-center shrink-0">
           {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
         </div>

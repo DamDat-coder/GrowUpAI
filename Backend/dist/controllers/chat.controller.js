@@ -45,9 +45,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHistory = exports.sendMessageToConversation = exports.sendMessage = void 0;
+exports.getNewMessagesForSync = exports.getHistory = exports.sendMessageToConversation = exports.sendMessage = void 0;
 const ChatService = __importStar(require("../services/chat.service"));
 const conversation_model_1 = __importDefault(require("../models/conversation.model"));
+const chat_model_1 = __importDefault(require("../models/chat.model"));
 /**
  * POST /api/chat
  * body: { conversationId?: string, message: string }
@@ -122,7 +123,9 @@ const getHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         // 1. [BẢO MẬT] Tìm cuộc hội thoại này trong DB xem nó thuộc về ai
         const conversation = yield conversation_model_1.default.findById(conversationId);
         if (!conversation) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy cuộc hội thoại!" });
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy cuộc hội thoại!" });
         }
         // Kiểm tra quyền sở hữu
         if (conversation.userId !== currentUserId) {
@@ -141,3 +144,24 @@ const getHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.getHistory = getHistory;
+const getNewMessagesForSync = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { since } = req.query;
+        const query = { sender: { $in: ["user", "ai"] } };
+        if (since && since !== "None" && since !== "undefined") {
+            // Ép kiểu Date chính xác từ chuỗi ISO
+            const sinceDate = new Date(since);
+            if (!isNaN(sinceDate.getTime())) {
+                query.createdAt = { $gt: sinceDate };
+            }
+        }
+        const messages = yield chat_model_1.default.find(query)
+            .sort({ createdAt: 1 }) // Quan trọng: Phải sort tăng dần để lấy tin nhắn cuối làm mốc
+            .lean();
+        return res.json({ success: true, data: messages });
+    }
+    catch (err) {
+        return res.status(500).json({ success: false, message: "Sync error" });
+    }
+});
+exports.getNewMessagesForSync = getNewMessagesForSync;
