@@ -26,9 +26,14 @@ export default function ChatPage() {
   };
 
   return (
-    <>
+    <div className="flex-1 flex flex-col w-full max-w-4xl mx-auto h-screen overflow-hidden px-6">
       <Hero />
-      <ChatInputBox onSend={handleSendFirstMessage} isFirstMessageSent={false} />
-    </>
+      <div className="py-4 w-full">
+        <ChatInputBox
+          onSend={handleSendFirstMessage}
+          isFirstMessageSent={false}
+        />
+      </div>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export default function ChatLayout({
       <Header />
       <Sidebar />
 
-      <div className="flex-1 flex flex-col items-stretch py-16 bg-gray-50 text-black dark:bg-[#1f1f1f] dark:text-white transition-colors duration-300">
+      <div className="flex-1 flex flex-col items-stretch py-20 bg-gray-50 text-black dark:bg-[#1f1f1f] dark:text-white transition-colors duration-300">
         {children}
       </div>
     </main>
