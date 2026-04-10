@@ -45,7 +45,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNewMessagesForSync = exports.getHistory = exports.sendMessageToConversation = exports.sendMessage = void 0;
+exports.syncAIResponse = exports.getNewMessagesForSync = exports.getHistory = exports.sendMessageToConversation = exports.sendMessage = void 0;
 const ChatService = __importStar(require("../services/chat.service"));
 const conversation_model_1 = __importDefault(require("../models/conversation.model"));
 const chat_model_1 = __importDefault(require("../models/chat.model"));
@@ -147,7 +147,7 @@ exports.getHistory = getHistory;
 const getNewMessagesForSync = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { since } = req.query;
-        const query = { sender: { $in: ["user", "ai"] } };
+        const query = { sender: { $in: ["user", "assistant"] } };
         if (since && since !== "None" && since !== "undefined") {
             // Ép kiểu Date chính xác từ chuỗi ISO
             const sinceDate = new Date(since);
@@ -165,3 +165,34 @@ const getNewMessagesForSync = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.getNewMessagesForSync = getNewMessagesForSync;
+const syncAIResponse = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userId, conversationId, userMessage, aiResponse } = req.body;
+        console.log("userId: ", userId);
+        console.log("conversationId: ", conversationId);
+        console.log("userMessage: ", userMessage);
+        console.log("aiResponse: ", aiResponse);
+        // 1. Lưu tin nhắn của USER (Chỗ này sẽ tạo ra message record cho User)
+        yield ChatService.addMessage({
+            conversationId,
+            userId,
+            sender: "user",
+            message: userMessage,
+            callAI: false, // Để nó không gọi ngược lại Python (tránh lặp vô tận)
+        });
+        // 2. Lưu tin nhắn của AI (Chỗ này tạo record cho AI)
+        yield ChatService.addMessage({
+            conversationId,
+            userId,
+            sender: "assistant", // Nhớ check Schema xem là "ai" hay "assistant" nhé
+            message: aiResponse,
+            callAI: false,
+        });
+        return res.status(200).json({ success: true });
+    }
+    catch (err) {
+        console.error("Sync Error:", err);
+        return res.status(500).json({ success: false });
+    }
+});
+exports.syncAIResponse = syncAIResponse;

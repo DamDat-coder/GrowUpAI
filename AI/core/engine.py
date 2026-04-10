@@ -8,23 +8,10 @@ import requests
 load_dotenv()
 
 
-def save_to_semantic_cache(question: str, answer: str):
-    try:
-        db = get_vector_db()  # Hoặc một collection riêng chuyên biệt
-        # Ta lưu Câu hỏi vào Vector, và Câu trả lời vào Metadata hoặc Document
-        db.add_texts(
-            texts=[question.lower()],
-            metadatas=[
-                {"answer": answer, "timestamp": datetime.datetime.now().isoformat()}
-            ],
-        )
-        print(f"    [Cache] Đã lưu câu hỏi vào bộ nhớ Semantic.")
-    except Exception as e:
-        print(f"[Cache Save Error]: {e}")
-
-
 # Hàm truy vấn Semantic Cache (Gọi ngay đầu luồng chat_endpoint)
-def get_semantic_cache(user_query: str, threshold: float = 0.15):
+def get_semantic_cache(
+    user_query: str, threshold: float = 0.12
+):  # Giảm xuống 0.12 để hit chính xác hơn
     try:
         db = get_vector_db()
         # Tìm câu hỏi tương tự nhất
@@ -32,16 +19,12 @@ def get_semantic_cache(user_query: str, threshold: float = 0.15):
 
         if results:
             doc, score = results[0]
-            # Score càng nhỏ càng giống (ChromaDB dùng L2 distance)
+            # ChromaDB L2 distance: 0 là giống hệt, > 1.0 là rất khác
             if score < threshold:
-                print(
-                    f"    [Cache Hit] Tìm thấy câu trả lời tương tự (Score: {score:.4f})"
-                )
                 return doc.metadata.get("answer")
-        return None
     except Exception as e:
         print(f"[Cache Query Error]: {e}")
-        return None
+    return None
 
 
 def get_last_sync_time():
@@ -74,7 +57,7 @@ def sync_from_mongodb():
             curr = messages[i]
             nxt = messages[i + 1]
 
-            if curr["sender"] == "user" and nxt["sender"] == "ai":
+            if curr["sender"] == "user" and nxt["sender"] == "assistant":
                 # Dùng ID của tin nhắn AI làm ID trong ChromaDB để tránh trùng
                 msg_id = str(nxt["_id"])
 
@@ -102,8 +85,11 @@ def get_rag_context(user_query: str, k: int = 4):
         db = get_vector_db()
         # Lấy kèm điểm số để kiểm tra độ liên quan thực tế
         docs_and_scores = db.similarity_search_with_score(user_query, k=k)
+        
+        for doc, score in docs_and_scores:
+            print(f"[RAG Debug] Score: {score:.4f} | Content: {doc.page_content[:50]}...")
 
-        relevant_docs = [doc for doc, score in docs_and_scores if score < 0.8]
+        relevant_docs = [doc for doc, score in docs_and_scores if score < 0.5]
         if not relevant_docs:
             return "DỮ LIỆU TRỐNG"
 

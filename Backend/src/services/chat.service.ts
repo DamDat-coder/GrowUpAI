@@ -3,7 +3,7 @@ import { aiService } from "./ai.service";
 import ChatMessage from "../models/chat.model";
 import { createConversation } from "./conversation.service";
 import Conversation from "../models/conversation.model";
-type Sender = "user" | "ai";
+type Sender = "user" | "assistant";
 
 export const addMessage = async (params: {
   conversationId?: string | null;
@@ -60,7 +60,7 @@ export const addMessage = async (params: {
       const reply = await aiService.generate(userId || "anonymous", message);
       const assistantMsg = await ChatMessage.create({
         conversationId: convId,
-        sender: "ai",
+        sender: "assistant",
         message: reply,
       });
 

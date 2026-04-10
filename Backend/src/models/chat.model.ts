@@ -2,7 +2,7 @@ import { Schema, model, Document } from "mongoose";
 
 export interface IChatMessage extends Document {
   conversationId: string;
-  sender: "user" | "ai";
+  sender: "user" | "assistant";
   message: string;
   createdAt: Date;
 }
@@ -10,7 +10,7 @@ export interface IChatMessage extends Document {
 const ChatMessageSchema = new Schema<IChatMessage>(
   {
     conversationId: { type: String, required: true },
-    sender: { type: String, enum: ["user", "ai"], required: true },
+    sender: { type: String, enum: ["user", "assistant"], required: true },
     message: { type: String, required: true },
   },
   { timestamps: true }

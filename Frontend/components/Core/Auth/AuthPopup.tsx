@@ -127,14 +127,14 @@ export default function AuthPopup({
                 width={100}
                 height={100}
                 alt="logo"
-                className="p-1 rounded-lg dark:hidden"
+                className="w-[40%] h-auto p-1 rounded-lg dark:hidden"
               />
               <Image
                 src="/Core/logo_dark_theme_v1.svg"
                 width={100}
                 height={100}
                 alt="logo"
-                className="p-1 rounded-lg hidden dark:block"
+                className="w-[40%] h-auto p-1 rounded-lg hidden dark:block"
               />
             </div>
 

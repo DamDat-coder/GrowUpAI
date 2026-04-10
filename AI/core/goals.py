@@ -1,7 +1,9 @@
 AVAILABLE_GOALS = [
-    "solve_numeric_problem",
-    "analyze_data",
+    "upload_document",
     "information_seeking",
     "learning_explanation",
-    "general_chat"
+    "solve_numeric_problem",
+    "document_deep_analysis",
+    "coding_task",
+    "general_chat",
 ]

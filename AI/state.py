@@ -15,7 +15,14 @@ CURRENT_DF = None
 
 LAST_SYNC_TIMESTAMP = None
 # --- NLP & Intent Mapping ---
-SBERT_MODEL = SentenceTransformer("keepitreal/vietnamese-sbert")
+hf_token = os.getenv("HF_TOKEN")
+
+SBERT_MODEL = SentenceTransformer(
+    "keepitreal/vietnamese-sbert",
+    device="cpu",
+    local_files_only=True,
+    use_auth_token=True,
+)
 
 # Load dữ liệu nhận diện Task (Intent)
 TASK_DF = pd.read_csv("./train/task_identification.csv")
