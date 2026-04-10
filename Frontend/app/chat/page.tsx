@@ -17,9 +17,10 @@ export default function ChatPage() {
       setLoading(true);
       const response = await sendMessage(text);
       const newConvId = response.data.conversationId;
+
       router.push(`/chat/${newConvId}`);
     } catch (err) {
-      console.error("Lỗi khởi tạo chat:", err);
+      console.error("Lỗi:", err);
     } finally {
       setLoading(false);
     }

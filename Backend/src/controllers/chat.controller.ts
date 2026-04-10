@@ -109,7 +109,7 @@ export const getHistory = async (req: AuthenticatedRequest, res: Response) => {
 export const getNewMessagesForSync = async (req: Request, res: Response) => {
   try {
     const { since } = req.query;
-    const query: any = { sender: { $in: ["user", "ai"] } };
+    const query: any = { sender: { $in: ["user", "assistant"] } };
 
     if (since && since !== "None" && since !== "undefined") {
       // Ép kiểu Date chính xác từ chuỗi ISO
@@ -126,5 +126,41 @@ export const getNewMessagesForSync = async (req: Request, res: Response) => {
     return res.json({ success: true, data: messages });
   } catch (err) {
     return res.status(500).json({ success: false, message: "Sync error" });
+  }
+};
+
+export const syncAIResponse = async (req: Request, res: Response) => {
+  try {
+    const { userId, conversationId, userMessage, aiResponse } = req.body;
+
+    // Ép buộc dùng đúng ID từ Python gửi sang (ID này lấy từ URL của FE)
+    const targetConvId = conversationId;
+    console.log("userId: ", userId);
+    console.log("conversationId: ", targetConvId);
+    console.log("userMessage: ", userMessage);
+    console.log("aiResponse: ", aiResponse);
+    // 1. Lưu tin nhắn User
+    await ChatMessage.create({
+      conversationId: targetConvId,
+      sender: "user",
+      message: userMessage,
+    });
+
+    // 2. Lưu tin nhắn AI
+    await ChatMessage.create({
+      conversationId: targetConvId,
+      sender: "assistant", // Đảm bảo khớp Enum trong model của bạn
+      message: aiResponse,
+    });
+
+    // 3. Cập nhật thời gian cho Conversation
+    await Conversation.findByIdAndUpdate(targetConvId, {
+      updatedAt: new Date(),
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Sync Error:", err);
+    return res.status(500).json({ success: false });
   }
 };

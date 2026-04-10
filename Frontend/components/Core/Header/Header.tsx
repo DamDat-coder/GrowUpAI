@@ -16,20 +16,23 @@ export default function Header() {
   return (
     <>
       <header className="flex items-center absolute top-6 left-0 right-0">
-        <Link href="/" className=" flex items-center translate-x-16 laptop:translate-x-24">
+        <Link
+          href="/"
+          className=" flex items-center translate-x-16 laptop:translate-x-24"
+        >
           <Image
             src="/Core/logo_light_theme.svg"
             width={100}
             height={100}
             alt="logo"
-            className=" dark:hidden"
+            className="w-[20%] h-auto dark:hidden"
           />
           <Image
             src="/Core/logo_dark_theme_v1.svg"
             width={100}
             height={100}
             alt="logo"
-            className=" hidden dark:block"
+            className="w-[20%] h-auto hidden dark:block"
           />
         </Link>
         {/* USER AREA */}

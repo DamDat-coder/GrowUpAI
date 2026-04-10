@@ -3,7 +3,8 @@ import {
   sendMessage,
   getHistory,
   sendMessageToConversation,
-  getNewMessagesForSync
+  getNewMessagesForSync,
+  syncAIResponse
 } from "../controllers/chat.controller";
 import {
   optionalAuthMiddleware,
@@ -23,5 +24,6 @@ router.post(
 );
 
 router.get("/:conversationId", authMiddleware, getHistory);
-router.get("/sync/internal", getNewMessagesForSync);
+// router.get("/sync/internal", getNewMessagesForSync);
+router.post("/sync/internal", syncAIResponse);
 export default router;

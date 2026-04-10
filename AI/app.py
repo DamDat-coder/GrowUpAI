@@ -1,7 +1,12 @@
 # app.py
+import asyncio
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from core.engine import get_semantic_cache
+from fastapi.responses import StreamingResponse
+import json
 import state
 
 from core.understand import understand
@@ -26,43 +31,32 @@ executor = Executor(tools=GLOBAL_TOOLS_REGISTRY)
 class ChatRequest(BaseModel):
     user_id: str
     message: str
+    conversationId: str
 
 
 @app.post("/api/v1/chat")
 async def chat_endpoint(request: ChatRequest):
     user_text = request.message.strip()
 
-    if not user_text:
-        raise HTTPException(status_code=400, detail="Tin nhắn không được để trống")
+    cached_answer = get_semantic_cache(user_text)
+    if cached_answer:
+        return {"status": "success", "response": cached_answer, "source": "cache"}
 
     try:
-        # 1. Hiểu ý định
-        problem = understand(user_text, state)
-
-        # 2. Lập kế hoạch
+        # Chạy understand async
+        problem = await asyncio.to_thread(understand, user_text, state)
         execution_plan = plan(problem)
-        execution_plan["original_question"] = user_text
+        execution_plan["text"] = user_text
+        execution_plan["user_id"] = request.user_id
+        execution_plan["conversationId"] = request.conversationId
 
-        # 3. Thực thi (RAG, Web Search...)
-        result_context = executor.run(execution_plan)
+        async def generate():
+            # Chạy executor dưới dạng generator
+            async for chunk in executor.run_and_stream(execution_plan):
+                if chunk:
+                    # Định dạng SSE (Server-Sent Events)
+                    yield f"data: {json.dumps({'text': chunk}, ensure_ascii=False)}\n\n"
 
-        # 4. Lấy kết quả cuối cùng
-        last_action = execution_plan["steps"][-1]["action"]
-        final_answer = result_context.get(last_action)
-
-        if "không đề cập" in final_answer or "không có thông tin" in final_answer or "không cung cấp thông tin chi tiết" in final_answer:
-            # Ép Planner tạo lại một kế hoạch mới sử dụng Web Search
-            print("user_text: ",user_text)
-            new_plan = {"steps": [{"action": "web_search", "query": user_text}]}
-            result_context = executor.run(new_plan)
-            final_answer = result_context.get("web_search")
-
-        return {
-            "status": "success",
-            "user_id": request.user_id,
-            "response": final_answer,
-        }
-
+        return StreamingResponse(generate(), media_type="text/event-stream")
     except Exception as e:
-        print(f"[Error]: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))

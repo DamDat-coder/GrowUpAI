@@ -35,14 +35,14 @@ def plan(problem: dict) -> dict:
     if goal == "web_search_required":
         steps = [
             {"action": "rewrite_search_query", "input": user_text},
-            {"action": "web_search", "input": "context.search_query"},
+            {"action": "web_search", "input": "__SEARCH_QUERY__"},
             {
                 "action": "ask_llm",
                 "input": "Tổng hợp thông tin mới nhất từ kết quả tìm kiếm.",
             },
         ]
 
-    if source == "external" or source == "hybrid":
+    if source == "external":
         steps = [
             # Bước 1: Rewrite câu hỏi thành từ khóa
             {"action": "rewrite_search_query", "input": user_text},
@@ -61,8 +61,16 @@ def plan(problem: dict) -> dict:
         }
     elif source == "hybrid":
         steps = [
-            {"action": "rag_search", "input": user_text},
-            {"action": "web_search", "input": user_text},
+            # Group 1: Chạy song song
+            {
+                "group": "data_retrieval",
+                "parallel": True,
+                "tasks": [
+                    {"action": "rag_search", "input": user_text},
+                    {"action": "web_search", "input": user_text},
+                ],
+            },
+            # Group 2: Chạy sau khi có đủ data
             {
                 "action": "ask_llm",
                 "input": "So sánh dữ liệu nội bộ và thông tin thực tế bên ngoài.",

@@ -5,9 +5,11 @@ import { useParams } from "next/navigation";
 import ChatMessages from "@/components/Home/Chat/ChatMessages";
 import ChatInputBox from "@/components/Home/Chat/ChatInputBox";
 import { Message } from "@/types/message";
-import { getHistory, sendMessage } from "@/services/chatApi";
+import { getHistory, sendMessage, sendMessageStream } from "@/services/chatApi";
+import { useAuth } from "@/contexts/authContext";
 
 export default function ChatDetailPage() {
+  const { user } = useAuth();
   const { id } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,21 +34,38 @@ export default function ChatDetailPage() {
   const handleSendNext = async (text: string) => {
     if (!text.trim()) return;
 
-    // Cập nhật UI tin nhắn user ngay lập tức
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setIsTyping(true);
-    try {
-      const response = await sendMessage(text, id as string);
-      const aiReply =
-        response.data.assistantMessage?.message || "AI bận rồi...";
+    // 1. Thêm tin nhắn của User vào trước
+    const userMsg: Message = { role: "user", content: text };
 
-      setMessages((prev) => [...prev, { role: "assistant", content: aiReply }]);
+    // 2. Thêm luôn một tin nhắn rỗng của Assistant để làm "chỗ ngồi"
+    const assistantPlaceholder: Message = { role: "assistant", content: "" };
+
+    setMessages((prev) => [...prev, userMsg, assistantPlaceholder]);
+    setIsTyping(true);
+
+    try {
+      let fullText = "";
+      const userId = user?.id;
+
+      await sendMessageStream(text, userId as string, id as string, (chunk) => {
+        fullText += chunk;
+
+        setMessages((prev) => {
+          const newMsgs = [...prev];
+          // 3. Bây giờ lastIdx chắc chắn là ô của Assistant (vì ta đã thêm ở bước 2)
+          const lastIdx = newMsgs.length - 1;
+          newMsgs[lastIdx] = { ...newMsgs[lastIdx], content: fullText };
+          return newMsgs;
+        });
+      });
     } catch (err) {
-      console.error("Lỗi gửi tin nhắn tiếp theo:", err);
+      console.error("Lỗi gửi stream:", err);
+      // Xử lý lỗi nếu cần
     } finally {
       setIsTyping(false);
     }
   };
+
   const handleEditMessage = async (idx: number, newText: string) => {
     if (!newText.trim()) return;
 

@@ -2,14 +2,18 @@
 import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 export const aiService = {
-  generate: async (userId: string, input: string): Promise<string> => {
+  generate: async (
+    userId: string,
+    input: string,
+    conversationId: string,
+  ): Promise<string> => {
     try {
       // 1. Gọi đúng port 8000 và đúng endpoint /api/v1/chat
       const res = await axios.post("http://localhost:8000/api/v1/chat", {
         user_id: userId, // Truyền userId để Python biết ai đang chat
         message: input,
+        conversationId: conversationId,
       });
 
       // 2. FastAPI trả về object có key là 'response'

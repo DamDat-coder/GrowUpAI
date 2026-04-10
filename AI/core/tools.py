@@ -1,16 +1,19 @@
 # core/tools.py
-from http import client
 import os
 import re
 import types
 
 from core.engine import get_rag_context
 from ddgs import DDGS
-from core.ingester import embed, learn_from_chat
-from utils.gemini_teacher import ask_gemini_to_reason
+from core.ingester import embed, add_interaction_to_db, is_garbage
+from utils.gemini_teacher import ask_gemini_to_reason_stream
 import state
+from google import genai
+from google.genai import types as genai_types
 
 GLOBAL_TOOLS_REGISTRY = {}
+api_key = os.getenv("GEMINI_API_KEY")
+gemini_client = genai.Client(api_key=api_key) if api_key else None
 
 
 # 2. Định nghĩa Decorator
@@ -77,27 +80,19 @@ def tool_web_search(user_input: str, context: dict):
 
 
 @register_tool("ask_llm")
-def tool_llm_reasoning(user_input: str, context: dict):
-    print("    [Tool] Gemini đang suy luận tổng hợp...")
-
+async def tool_llm_reasoning(user_input: str, context: dict):
     web_data = context.get("web_search", "")
     rag_data = context.get("rag_result", "")
     original_question = context.get("original_question", user_input)
 
-    combined_context = f"""
-    DỮ LIỆU TỪ TÀI LIỆU NỘI BỘ (RAG):
-    {rag_data}
-    
-    DỮ LIỆU TỪ INTERNET (WEB):
-    {web_data}
-    """
+    combined_context = f"RAG: {rag_data}\nWEB: {web_data}"
 
-    final_answer = ask_gemini_to_reason(
+    # Trả về generator để Executor yield ra ngoài FastAPI
+    return ask_gemini_to_reason_stream(
         question=original_question,
         context_info=combined_context,
         history=state.CONVERSATION_HISTORY,
     )
-    return final_answer
 
 
 @register_tool("compute")
@@ -113,7 +108,7 @@ def tool_rewrite_search_query(user_text: str, execution_context: dict) -> str:
     """
     Nâng cấp: Chuyển câu hỏi tự nhiên thành bộ từ khóa tìm kiếm (Search Queries).
     """
-    if not client:
+    if not gemini_client:
         return user_text
 
     system_instruction = (
@@ -129,42 +124,51 @@ def tool_rewrite_search_query(user_text: str, execution_context: dict) -> str:
     prompt = f"Câu hỏi người dùng: '{user_text}'"
 
     try:
-        response = client.models.generate_content(
+        response = gemini_client.models.generate_content(
             model="gemini-2.5-flash-lite",
             contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2, # Thấp để tránh sáng tạo quá đà
+            config=genai_types.GenerateContentConfig(
+                temperature=0.2,  # Thấp để tránh sáng tạo quá đà
                 system_instruction=system_instruction,
                 max_output_tokens=100,
             ),
         )
-        query = response.text.strip().replace('"', '')
+        query = response.text.strip().replace('"', "")
         print(f"    [Rewrite Result]: {query}")
         return query
     except Exception as e:
         print(f"[Rewrite Error]: {e}")
-        return user_text # Fallback dùng text gốc
+        return user_text  # Fallback dùng text gốc
+
 
 @register_tool("smart_intelligence")
 def tool_smart_intelligence(user_input: str, context: dict):
-    # 1. Thử hỏi bộ nhớ Local (RAG)
+    # 1. Thử hỏi bộ nhớ Local
     rag_data = get_rag_context(user_input)
 
+    final_answer = None
+
     if rag_data != "DỮ LIỆU TRỐNG":
-        print("    [Success] Trả lời từ bộ nhớ local.")
-        return ask_gemini_to_reason(user_input, context_info=rag_data)
+        print("    [Success] Tìm thấy kiến thức local, đang nhờ Gemini phân tích...")
+        final_answer = ask_gemini_to_reason_stream(user_input, context_info=rag_data)
 
-    # 2. Nếu local không biết -> Web Search
-    print("    [Fallback] Đang tìm kiếm trên Internet...")
+    # 2. Nếu RAG không có dữ liệu HOẶC Gemini không trả lời được từ RAG đó
+    # Kiểm tra thêm: nếu final_answer chứa các câu từ chối của AI
+    if (
+        not final_answer
+        or "không thể trả lời" in final_answer.lower()
+        or "không có thông tin" in final_answer.lower()
+    ):
+        print("    [Fallback] Local không đủ thông tin, chuyển sang Web Search...")
 
-    query = tool_rewrite_search_query(user_input, context)
-    web_data = tool_web_search(query, context)
+        query = tool_rewrite_search_query(user_input, context)
+        web_data = tool_web_search(query, context)
+        final_answer = ask_gemini_to_reason_stream(user_input, context_info=web_data)
 
-    # 3. Gemini tổng hợp
-    final_answer = ask_gemini_to_reason(user_input, context_info=web_data)
-
-    # 4. Tự học
-    if final_answer and "không tìm thấy" not in final_answer.lower():
-        learn_from_chat(user_input, final_answer)
-
+    # 3. Tự học (Chỉ học những thứ chất lượng)
+    if final_answer and not is_garbage(
+        final_answer
+    ):  # Dùng hàm check rác đã nói ở trên
+        add_interaction_to_db(user_input, final_answer)
+    print("final_answer: ", final_answer)
     return final_answer

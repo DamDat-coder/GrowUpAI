@@ -57,7 +57,7 @@ const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
             const reply = yield ai_service_1.aiService.generate(userId || "anonymous", message);
             const assistantMsg = yield chat_model_1.default.create({
                 conversationId: convId,
-                sender: "ai",
+                sender: "assistant",
                 message: reply,
             });
             yield conversation_model_1.default.findByIdAndUpdate(convId, { updatedAt: new Date() });

@@ -1,22 +1,6 @@
 import { Message } from "@/types/message";
 import { apiFetch } from "./api";
-import { BackendMessage } from "@/types/chat";
-
-export interface ChatMessage {
-  _id?: string;
-  conversationId?: string;
-  sender: "user" | "ai";
-  message: string;
-  createdAt?: string;
-}
-export interface SendMessageResponse {
-  success: boolean;
-  data: {
-    conversationId: string;
-    message: ChatMessage;
-    assistantMessage?: ChatMessage;
-  };
-}
+import { BackendMessage, SendMessageResponse } from "@/types/chat";
 
 export async function sendMessage(
   message: string,
@@ -48,7 +32,7 @@ export async function getHistory(conversationId: string): Promise<Message[]> {
     throw new Error("conversationId is required");
   }
   console.log("Gọi getHistory");
-  
+
   // Gọi API tới Node.js Backend
   const res = await apiFetch<{ success: boolean; data: BackendMessage[] }>(
     `/chat/${conversationId}`,
@@ -65,4 +49,55 @@ export async function getHistory(conversationId: string): Promise<Message[]> {
   }
 
   return [];
+}
+
+// services/chatApi.ts
+
+export async function sendMessageStream(
+  message: string,
+  userId: string,
+  conversationId: string,
+  onChunk: (text: string) => void,
+) {
+  console.log("message: ", message);
+  console.log("userId: ", userId);
+  console.log("conversationId: ", conversationId);
+
+  // 1. Gọi thẳng sang Python FastAPI (Port 8000)
+  const response = await fetch("http://localhost:8000/api/v1/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: userId,
+      message: message,
+      conversationId: conversationId,
+    }),
+  });
+  console.log("response: ", response);
+
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+  let fullAnswer = "";
+
+  while (true) {
+    const { done, value } = await reader!.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split("\n");
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const data = line.replace("data: ", "").trim();
+        if (data === "[DONE]") break;
+        try {
+          const parsed = JSON.parse(data);
+          fullAnswer += parsed.text;
+          onChunk(parsed.text); // Cập nhật UI ngay lập tức
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {}
+      }
+    }
+  }
+  return fullAnswer; // Trả về để sau đó lưu vào DB
 }

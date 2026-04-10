@@ -1,15 +1,16 @@
 # ultis/gemini_teacher.py
 import os
+import types
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
 import json
-
+from utils.helpers import get_random_api_key
 from core.engine import get_rag_context as local_rag_query
+from google import genai
+from google.genai import types as genai_types
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+current_key = get_random_api_key()
+gemini_client = genai.Client(api_key=current_key) if current_key else None
 
 
 def fallback_understand(user_text):
@@ -27,7 +28,7 @@ def ask_gemini_to_understand(
     intent_signal: str | None = None,
     history: list = None,
 ):
-    if not client:
+    if not gemini_client:
         return fallback_understand(user_text)
 
     history_text = ""
@@ -60,15 +61,15 @@ def ask_gemini_to_understand(
           "explanation": "tại sao chọn nguồn này"
         }}
     """
-
+    raw_text = ""
     try:
-        response = client.models.generate_content(
-            model="gemini-flash-latest",
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash-lite",
             contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0,
-                max_output_tokens=500,
-                response_mime_type="application/json",
+            config=genai_types.GenerateContentConfig(
+                temperature=0.3,
+                system_instruction=prompt,
+                stream=True,  # Kích hoạt streaming
             ),
         )
         raw_text = response.text.strip()
@@ -91,24 +92,19 @@ def ask_gemini_to_understand(
         return fallback_understand(user_text)
 
 
-def ask_gemini_to_reason(
+async def ask_gemini_to_reason_stream(
     question: str,
-    context_info: str = "",
+    context_info: str,
     history: list = None,
     temperature: float = 0.3,
     max_tokens: int = 2000,
-) -> str:
-    if not client:
-        return "[Lỗi] Không kết nối được Gemini."
+):
 
-    if not context_info:
-        try:
-            context_info = local_rag_query(question)
-            print(f"[RAG Context] Đã tìm thấy dữ liệu liên quan từ tài liệu nội bộ.")
-        except Exception as e:
-            print(f"[RAG Error] Không thể lấy dữ liệu: {e}")
-            context_info = "Không tìm thấy thông tin bổ sung trong tài liệu nội bộ."
+    if not gemini_client:
+        yield "[Lỗi] Không kết nối được Gemini."
+        return
 
+    # 1. Xử lý Lịch sử (Y hệt bản thường)
     history_text = ""
     if history:
         history_text = "\n".join(
@@ -117,44 +113,52 @@ def ask_gemini_to_reason(
                 for m in history[-6:]
             ]
         )
+
+    # 2. Định nghĩa System Instruction
     system_instruction = (
         "Bạn là GrowUp AI - Trợ lý đa năng chuyên nghiệp.\n"
-        "Nếu trong câu hỏi có những thứ liên quan đến số liệu, thống kê, ... hãy tìm hiểu kỹ sau đó mới trả lời.\n"
-        "Nếu câu hỏi mang tính thời sự (giá cả hôm nay, tin tức 24h qua) mà trong Context không có số liệu cụ thể, BẮT BUỘC phải chọn tool web_search thay vì rag.\n"
+        "Nếu trong câu hỏi có những thứ liên quan đến số liệu, thống kê, hãy tìm hiểu kỹ sau đó mới trả lời.\n"
         "1. Nếu trả lời về lập trình (Coding): Sử dụng Markdown chuẩn, giải thích rõ ràng.\n"
         "2. Nếu là phân tích tài liệu (Analysis): Trình bày có cấu trúc, luận điểm rõ ràng.\n"
-        "3. Nếu trả lời về các số liệu: Tìm kiếm từ các nguồn uy tín và có liên quan\n"
-        "4. Ngôn ngữ: Tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp."
+        "3. Ngôn ngữ: Tiếng Việt, giọng điệu thân thiện nhưng chuyên nghiệp."
     )
+
+    # 3. Tạo Prompt đầy đủ (Copy từ bản thường sang)
     prompt = f"""
-Bạn là một trợ lý AI thông minh. Hãy sử dụng thông tin tham khảo để hiểu về chính sách, nhưng đối với các số liệu biến động hoặc tin tức mới nhất, hãy sử dụng kết quả từ công cụ tìm kiếm và kiến thức nền của bạn để bổ sung. Tuyệt đối không trả lời 'Tôi không biết' nếu vấn đề đó có thể tìm kiếm được trên internet.
+Bạn là một trợ lý AI thông minh. Hãy sử dụng thông tin tham khảo để hiểu về chính sách, nhưng đối với các số liệu biến động hoặc tin tức mới nhất, hãy sử dụng kết quả từ công cụ tìm kiếm và kiến thức nền của bạn để bổ sung.
 
 Lịch sử cuộc trò chuyện:
 {history_text or "Không có lịch sử."}
 
-Thông tin tham khảo (Từ tài liệu RAG nội bộ):
+Thông tin tham khảo:
 {context_info}
 
 Câu hỏi hiện tại: {question}
 
 Yêu cầu:
-1. Trả lời bằng tiếng Việt, giọng thân thiện, chuyên nghiệp.
-2. Ưu tiên sử dụng "Thông tin tham khảo" để trả lời. 
-3. Nếu "Thông tin tham khảo" không có câu trả lời, hãy dùng kiến thức chung của bạn nhưng phải nói rõ là "Theo kiến thức chung...".
-4. Tuyệt đối không bịa đặt thông tin nếu cả hai nguồn đều không có.
+1. Trả lời bằng tiếng Việt, giọng thân thiện.
+2. Ưu tiên sử dụng "Thông tin tham khảo". 
+3. Nếu không có trong context, hãy dùng kiến thức chung và nói rõ "Theo kiến thức chung...".
 """
 
     try:
-        response = client.models.generate_content(
+        # 4. Gọi Stream API
+        # Lưu ý: Dat đổi model thành "gemini-2.0-flash" nếu bản 2.5 báo lỗi quota nhé
+        response = gemini_client.models.generate_content_stream(
             model="gemini-2.5-flash-lite",
             contents=prompt,
-            config=types.GenerateContentConfig(
+            config=genai_types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
                 system_instruction=system_instruction,
             ),
         )
-        return response.text.strip()
+
+        # 5. Yield từng chunk văn bản
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
+
     except Exception as e:
-        print(f"[Gemini Reasoning ERROR] {e}")
-        return f"[Lỗi Gemini] {str(e)}"
+        print(f"[Gemini Stream ERROR] {e}")
+        yield f"[Lỗi Stream Gemini] {str(e)}"

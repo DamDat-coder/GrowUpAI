@@ -9,5 +9,6 @@ router.post("/", auth_middleware_1.optionalAuthMiddleware, chat_controller_1.sen
 // Option 2: POST with conversationId param (backward-compatible)
 router.post("/:conversationId", auth_middleware_1.optionalAuthMiddleware, chat_controller_1.sendMessageToConversation);
 router.get("/:conversationId", auth_middleware_1.authMiddleware, chat_controller_1.getHistory);
-router.get("/sync/internal", chat_controller_1.getNewMessagesForSync);
+// router.get("/sync/internal", getNewMessagesForSync);
+router.post("/sync/internal", chat_controller_1.syncAIResponse);
 exports.default = router;
