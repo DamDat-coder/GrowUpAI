@@ -18,7 +18,7 @@ def get_random_api_key():
     
     if not api_keys:
         # Fallback về key cũ nếu bạn chưa kịp update .env
-        single_key = os.getenv("GEMINI_API_KEY")
+        single_key = os.getenv("GEMINI_API_KEYS")
         if single_key:
             return single_key
         raise ValueError("❌ Không tìm thấy GEMINI_API_KEY nào trong file .env!")

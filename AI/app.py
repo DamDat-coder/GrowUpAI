@@ -8,6 +8,7 @@ from core.engine import get_semantic_cache
 from fastapi.responses import StreamingResponse
 import json
 import state
+from typing import Optional
 
 from core.understand import understand
 from core.planner import plan
@@ -31,7 +32,7 @@ executor = Executor(tools=GLOBAL_TOOLS_REGISTRY)
 class ChatRequest(BaseModel):
     user_id: str
     message: str
-    conversationId: str
+    conversationId: Optional[str] = None
 
 
 @app.post("/api/v1/chat")

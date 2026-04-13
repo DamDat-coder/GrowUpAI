@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ChatMessages from "@/components/Home/Chat/ChatMessages";
 import ChatInputBox from "@/components/Home/Chat/ChatInputBox";
 import { Message } from "@/types/message";
 import { getHistory, sendMessage, sendMessageStream } from "@/services/chatApi";
 import { useAuth } from "@/contexts/authContext";
+import { createConversation } from "@/services/conversationApi";
 
 export default function ChatDetailPage() {
   const { user } = useAuth();
   const { id } = useParams();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
@@ -46,7 +48,12 @@ export default function ChatDetailPage() {
     try {
       let fullText = "";
       const userId = user?.id;
-
+      let currentId = id;
+      if (!id || id === "new") {
+        const newConv = await createConversation(user?.id as string, text.slice(0, 30));
+        currentId = (newConv as { _id: string })._id;
+        router.replace(`/chat/${currentId}`);
+      }
       await sendMessageStream(text, userId as string, id as string, (chunk) => {
         fullText += chunk;
 

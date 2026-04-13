@@ -62,15 +62,15 @@ export async function sendMessageStream(
   console.log("message: ", message);
   console.log("userId: ", userId);
   console.log("conversationId: ", conversationId);
+  const safeConvId = (conversationId && conversationId !== "new") ? conversationId : "";
 
-  // 1. Gọi thẳng sang Python FastAPI (Port 8000)
   const response = await fetch("http://localhost:8000/api/v1/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: userId,
       message: message,
-      conversationId: conversationId,
+      conversationId: safeConvId,
     }),
   });
   console.log("response: ", response);

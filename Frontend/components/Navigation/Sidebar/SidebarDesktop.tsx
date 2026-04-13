@@ -14,17 +14,17 @@ import {
 import { SidebarItem } from "./SidebarItem";
 import ConversationList from "../ConversationList";
 import { SharedSidebarProps } from "@/types/sidebar";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 export default function SidebarDesktop({
   items,
-  conversations,
   user,
   theme,
   toggleTheme,
 }: SharedSidebarProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
-
+  const { conversations } = useSidebar();
   return (
     <aside
       data-expanded={isPinned}

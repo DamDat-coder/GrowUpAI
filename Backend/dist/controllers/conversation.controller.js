@@ -42,7 +42,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getConversations = exports.createConversation = void 0;
+exports.deleteConversation = exports.renameConversation = exports.getConversations = exports.createConversation = void 0;
 const ConversationService = __importStar(require("../services/conversation.service"));
 const createConversation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -68,3 +68,51 @@ const getConversations = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getConversations = getConversations;
+// Sửa tên Conversation
+const renameConversation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { conversationId, newTitle } = req.body;
+        console.log("conversationId: ", conversationId);
+        console.log("newTitle: ", newTitle);
+        if (!conversationId || !newTitle) {
+            return res.status(400).json({ error: "Thiếu ID hoặc tiêu đề mới" });
+        }
+        const updated = yield ConversationService.renameConversation(conversationId, newTitle);
+        if (!updated) {
+            return res.status(404).json({ error: "Không tìm thấy cuộc hội thoại" });
+        }
+        res.json({ success: true, data: updated });
+    }
+    catch (err) {
+        res.status(500).json({ error: "Lỗi khi đổi tên hội thoại" });
+    }
+});
+exports.renameConversation = renameConversation;
+const deleteConversation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        // 1. Lấy ID từ body hoặc params (tùy bạn thiết kế, ở đây mình dùng body theo code bạn gửi)
+        const { conversationId } = req.body;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+        // 2. Tìm DUY NHẤT một cuộc hội thoại theo ID
+        // Giả sử bạn có hàm getConversationById trong service
+        const conv = yield ConversationService.getConversationById(conversationId);
+        // 3. Kiểm tra tồn tại và đúng chủ sở hữu
+        if (!conv) {
+            return res.status(404).json({ error: "Không tìm thấy cuộc hội thoại" });
+        }
+        if (conv.userId.toString() !== userId) {
+            return res
+                .status(403)
+                .json({ error: "Bạn không có quyền xóa cuộc hội thoại này" });
+        }
+        // 4. Gọi service để soft delete
+        yield ConversationService.deleteConversation(conversationId);
+        res.json({ success: true, message: "Đã chuyển vào thùng rác thành công" });
+    }
+    catch (err) {
+        console.error("Delete Error:", err);
+        res.status(500).json({ error: "Lỗi khi xóa hội thoại" });
+    }
+});
+exports.deleteConversation = deleteConversation;
