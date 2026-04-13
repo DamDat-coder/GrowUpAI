@@ -57,7 +57,11 @@ export const addMessage = async (params: {
 
   if (sender === "user" && callAI) {
     try {
-      const reply = await aiService.generate(userId || "anonymous", message);
+      const reply = await aiService.generate(
+        userId || "anonymous",
+        message,
+        conversationId as string,
+      );
       const assistantMsg = await ChatMessage.create({
         conversationId: convId,
         sender: "assistant",

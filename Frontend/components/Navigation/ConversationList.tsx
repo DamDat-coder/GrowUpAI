@@ -6,15 +6,24 @@ import { ConversationListProps } from "@/types/conversation";
 import { Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGlobalModal } from "@/contexts/ModalContext";
+import {
+  deleteConversation,
+  renameConversation,
+} from "@/services/conversationApi";
+import toast from "react-hot-toast";
+import { useParams, useRouter } from "next/navigation";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 type PopupType = "rename" | "delete" | null;
 
 const ConversationList: React.FC<ConversationListProps> = ({
-  conversations,
   closeMobileMenu,
 }) => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const { openModal } = useGlobalModal();
+  const router = useRouter();
+  const params = useParams();
+  const { conversations, refetchConversations } = useSidebar();
   const [popup, setPopup] = useState<{
     type: PopupType;
     id: string;
@@ -25,18 +34,35 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const sortedConversations = [...conversations].sort((a, b) => {
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
-  const handleConfirmAction = () => {
-    if (!popup) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (popup.type === "rename") {
-      console.log("API Gọi Update Title:", popup.id, newTitle);
-      // Logic: await api.rename(popup.id, newTitle);
-    } else if (popup.type === "delete") {
-      console.log("API Gọi Soft Delete:", popup.id);
-      // Logic: await api.softDelete(popup.id);
+  const handleConfirmAction = async () => {
+    if (!popup || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (popup.type === "rename") {
+        // newTitle nên được lấy từ state của component quản lý popup này
+        await renameConversation(popup.id, newTitle);
+      } else if (popup.type === "delete") {
+        await deleteConversation(popup.id);
+
+        // Nếu đang đứng ở đúng cái chat vừa xóa thì đẩy về trang chủ
+        if (params.id === popup.id) {
+          router.push("/chat");
+        }
+      }
+
+      // QUAN TRỌNG: Cập nhật lại danh sách Sidebar ngay lập tức
+      await refetchConversations();
+
+      setPopup(null); // Đóng popup thành công
+    } catch (error) {
+      console.error("Lỗi thực thi:", error);
+      alert("Có lỗi xảy ra, Dat vui lòng kiểm tra lại nhé!");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setPopup(null); // Đóng popup sau khi xong
   };
   const handleOpenDelete = (id: string, title: string) => {
     openModal({
@@ -44,29 +70,63 @@ const ConversationList: React.FC<ConversationListProps> = ({
       description: `Bạn có chắc muốn ẩn "${title}"? Dữ liệu vẫn được lưu trữ an toàn.`,
       confirmText: "Xóa ngay",
       type: "danger",
-      onConfirm: () => {
-        console.log("Xử lý xóa ID:", id);
-        // Gọi API xóa ở đây
+      onConfirm: async () => {
+        // Thêm async ở đây
+        try {
+          await deleteConversation(id);
+          toast.success("Xóa thành công");
+          if (params.id === id) {
+            // Nếu đang ở đúng trang đó -> Đẩy về trang /chat
+            router.push("/chat");
+          } else {
+            // Nếu đang ở trang khác (xóa hộ) -> Chỉ cần load lại sidebar
+            await refetchConversations();
+          }
+        } catch (error) {
+          console.error("Lỗi khi xóa hội thoại:", error);
+          // Bạn có thể hiển thị một cái alert hoặc toast báo lỗi cho user
+          alert("Không thể xóa cuộc hội thoại này. Vui lòng thử lại sau.");
+        }
       },
     });
   };
 
   const handleOpenRename = (id: string, currentTitle: string) => {
-    // Chúng ta có thể truyền cả Input vào Modal
+    let newTitle = currentTitle; // Dùng biến này thay vì window.tempTitle
+
     openModal({
-      title: "Đổi tên",
+      title: "Đổi tên cuộc trò chuyện",
       content: (
-        <input
-          defaultValue={currentTitle}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onChange={(e) => ((window as any).tempTitle = e.target.value)} // Lưu tạm title
-          className="w-full p-3 rounded-xl bg-gray-100 dark:bg-white/5 outline-none"
-        />
+        <div className="py-2">
+          <input
+            defaultValue={currentTitle}
+            onChange={(e) => (newTitle = e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                // Nếu muốn nhấn Enter là confirm luôn
+              }
+            }}
+            className="w-full p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-transparent focus:border-green-500 outline-none transition-all"
+            autoFocus
+          />
+        </div>
       ),
-      onConfirm: () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const title = (window as any).tempTitle || currentTitle;
-        console.log("Cập nhật title mới:", title);
+      onConfirm: async () => {
+        if (!newTitle.trim() || newTitle === currentTitle) return;
+        console.log("newTitle: ",newTitle);
+        
+        try {
+          // Gọi API rename của Dat
+          await renameConversation(id, newTitle.trim());
+
+          // Refresh lại sidebar để thấy tên mới
+          await refetchConversations();
+
+          console.log("Đổi tên thành công!");
+        } catch (error) {
+          console.error("Lỗi khi đổi tên:", error);
+          alert("Không thể đổi tên lúc này, thử lại sau Dat nhé!");
+        }
       },
     });
   };

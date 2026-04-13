@@ -7,10 +7,11 @@ import { X, User, MessagesSquare, ChevronUp, ChevronDown, Moon, Sun, LogOut } fr
 import UserBadge from "../../Core/Auth/UserBadge";
 import ConversationList from "../ConversationList";
 import { MobileSidebarProps } from "@/types/sidebar";
+import { useSidebar } from "@/contexts/SidebarContext";
 
-export default function SidebarMobile({ isOpen, onClose, items, conversations, user, logout, theme, toggleTheme, onOpenAuth }:MobileSidebarProps) {
+export default function SidebarMobile({ isOpen, onClose, items, user, logout, theme, toggleTheme, onOpenAuth }:MobileSidebarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+  const { conversations } = useSidebar();
   return (
     <>
       {/* Overlay */}

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authContext";
 import { Toaster } from "react-hot-toast";
 import { ModalProvider } from "@/contexts/ModalContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,7 +26,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="bg-gray-50 text-black dark:bg-gray-950 dark:text-white transition-colors duration-300">
         <AuthProvider>
-          <ModalProvider>{children}</ModalProvider>
+          <SidebarProvider>
+            <ModalProvider>{children}</ModalProvider>
+          </SidebarProvider>
           <Toaster
             position="top-right"
             toastOptions={{

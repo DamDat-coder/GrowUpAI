@@ -17,12 +17,13 @@ exports.aiService = void 0;
 const axios_1 = __importDefault(require("axios"));
 const generative_ai_1 = require("@google/generative-ai");
 exports.aiService = {
-    generate: (userId, input) => __awaiter(void 0, void 0, void 0, function* () {
+    generate: (userId, input, conversationId) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             // 1. Gọi đúng port 8000 và đúng endpoint /api/v1/chat
             const res = yield axios_1.default.post("http://localhost:8000/api/v1/chat", {
                 user_id: userId, // Truyền userId để Python biết ai đang chat
                 message: input,
+                conversationId: conversationId,
             });
             // 2. FastAPI trả về object có key là 'response'
             return res.data.response;

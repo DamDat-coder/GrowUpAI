@@ -1,5 +1,4 @@
 import { IUser } from "./auth";
-import { Conversation } from "./conversation";
 
 export interface BaseItem {
   label: string;
@@ -11,7 +10,6 @@ export interface BaseItem {
 // Dùng chung cho cả 2 loại Sidebar
 export interface SharedSidebarProps {
   items: BaseItem[];
-  conversations: Conversation[];
   user: IUser | null;
   theme: "light" | "dark";
   toggleTheme: () => void;

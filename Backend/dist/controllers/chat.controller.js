@@ -168,30 +168,32 @@ exports.getNewMessagesForSync = getNewMessagesForSync;
 const syncAIResponse = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, conversationId, userMessage, aiResponse } = req.body;
+        // Ép buộc dùng đúng ID từ Python gửi sang (ID này lấy từ URL của FE)
+        const targetConvId = conversationId;
         console.log("userId: ", userId);
-        console.log("conversationId: ", conversationId);
+        console.log("conversationId: ", targetConvId);
         console.log("userMessage: ", userMessage);
         console.log("aiResponse: ", aiResponse);
-        // 1. Lưu tin nhắn của USER (Chỗ này sẽ tạo ra message record cho User)
-        yield ChatService.addMessage({
-            conversationId,
-            userId,
+        // 1. Lưu tin nhắn User
+        yield chat_model_1.default.create({
+            conversationId: targetConvId,
             sender: "user",
             message: userMessage,
-            callAI: false, // Để nó không gọi ngược lại Python (tránh lặp vô tận)
         });
-        // 2. Lưu tin nhắn của AI (Chỗ này tạo record cho AI)
-        yield ChatService.addMessage({
-            conversationId,
-            userId,
-            sender: "assistant", // Nhớ check Schema xem là "ai" hay "assistant" nhé
+        // 2. Lưu tin nhắn AI
+        yield chat_model_1.default.create({
+            conversationId: targetConvId,
+            sender: "assistant", // Đảm bảo khớp Enum trong model của bạn
             message: aiResponse,
-            callAI: false,
+        });
+        // 3. Cập nhật thời gian cho Conversation
+        yield conversation_model_1.default.findByIdAndUpdate(targetConvId, {
+            updatedAt: new Date(),
         });
         return res.status(200).json({ success: true });
     }
     catch (err) {
-        console.error("Sync Error:", err);
+        console.error("❌ Sync Error:", err);
         return res.status(500).json({ success: false });
     }
 });

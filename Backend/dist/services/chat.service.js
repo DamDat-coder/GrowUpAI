@@ -54,7 +54,7 @@ const addMessage = (params) => __awaiter(void 0, void 0, void 0, function* () {
     };
     if (sender === "user" && callAI) {
         try {
-            const reply = yield ai_service_1.aiService.generate(userId || "anonymous", message);
+            const reply = yield ai_service_1.aiService.generate(userId || "anonymous", message, conversationId);
             const assistantMsg = yield chat_model_1.default.create({
                 conversationId: convId,
                 sender: "assistant",
