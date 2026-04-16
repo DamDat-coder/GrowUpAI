@@ -11,22 +11,32 @@
 - **Xác thực & Bảo mật:** Tích hợp Middleware xác thực cho các yêu cầu API từ người dùng.
 
 ##  Công nghệ sử dụng
-**AI Core**
-    - **Ngôn ngữ:** Python 3.10+
-    - **AI Frameworks:** LangChain, Google Gemini API (1.5 Flash & Pro)
-    - **Vector Database:** ChromaDB
-    - **Backend:** FastAPI (Python), Node.js (Express - làm Gateway)
-    - **Frontend:** React / Next.js
-    - **Tools:** DuckDuckGo Search API, Ollama (Local Embeddings), PyPDF2
-**Frontend (Next.js)**
-    - **Framework:** Next.js 14+ (App Router).
-    - **Styling:** Tailwind CSS.
-    - **State Management:** React Context & Hooks.
-    - **API Communication:** Axios & Server-Sent Events (SSE).
-**Backend Gateway (Node.js/Express)**
-    - **Language:** TypeScript.
-    - **Chức năng:** Điều phối yêu cầu (Orchestrator), quản lý người dùng, lịch sử trò chuyện và đóng vai trò Gateway kết nối với  Service.
-    - **ORM/Database:** MongoDB (dựa trên cấu trúc models hiện có).
+###  AI Core
+- **Ngôn ngữ:** Python 3.10+  
+- **AI Frameworks:** LangChain, Google Gemini API (1.5 Flash & Pro)  
+- **Vector Database:** ChromaDB  
+- **Backend:** FastAPI (Python), Node.js (Express - làm Gateway)  
+- **Frontend:** React / Next.js  
+- **Tools:** DuckDuckGo Search API, Ollama (Local Embeddings), PyPDF2  
+
+---
+
+###  Frontend (Next.js)
+- **Framework:** Next.js 14+ (App Router)  
+- **Styling:** Tailwind CSS  
+- **State Management:** React Context & Hooks  
+- **API Communication:** Axios & Server-Sent Events (SSE)  
+
+---
+
+###  Backend Gateway (Node.js/Express)
+- **Language:** TypeScript  
+- **Chức năng:**  
+  - Điều phối yêu cầu (Orchestrator)  
+  - Quản lý người dùng  
+  - Lưu trữ lịch sử trò chuyện  
+  - Đóng vai trò Gateway kết nối với AI Service  
+- **ORM/Database:** MongoDB (dựa trên cấu trúc models hiện có)  
 
 ##  Cấu trúc dự án (Phần AI)
 ```text
